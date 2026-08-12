@@ -32,7 +32,7 @@ export function Set() {
     <>
       <img
         className="design__art"
-        src="/art/backdrop.jpg"
+        src="/art/backdrop2.jpg"
         alt="The society, in cross-section: the Deity above, the chain below"
         draggable={false}
       />

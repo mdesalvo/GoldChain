@@ -25,11 +25,11 @@ const STAGE_LABEL = {
 // same way the rail cards do — a hard hat for the mines, a cart for
 // transport, and so on.
 const STAGE_ICON = {
-  [ROLES.MINER]: "workers",
+  [ROLES.MINER]: "pickaxe",
   [ROLES.TRANSPORTER]: "cart",
   [ROLES.SMELTER]: "flame",
   [ROLES.MINTER]: "coinstage",
-  [ROLES.PAYER]: "coin",
+  [ROLES.PAYER]: "delivery",
 };
 
 /**

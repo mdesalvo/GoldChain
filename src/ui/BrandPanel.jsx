@@ -9,8 +9,8 @@ export function BrandPanel() {
     <div className="panel brandpanel__head">
       <Icon name="crown" size="lg" alt="" />
       <div>
-        <div className="brand__name">DIVINE FLOW</div>
-        <div className="brand__sub">Keep the Celebrity Deity happy.</div>
+        <div className="brand__name">GOLD CHAIN</div>
+        <div className="brand__sub">Keep the Celebrity Deity happy</div>
       </div>
     </div>
   );

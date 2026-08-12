@@ -1,14 +1,17 @@
-# GoldChain
+# 🪙 Gold Chain - The ultimate, satirical capitalist simulator
 
-Welcome to a society built for one single purpose.
-Deliver exactly one coin every second to your Deity.
-The Deity is an astronomically-paid, deified mega-celebrity.
-Your sole job is to keep that counter steady.
-Quash violent monkey strikes before they halt production.
-Repair catastrophic infrastructure breakdowns in real-time.
-Outsmart brutal mafia sabotage and sudden political upheavals.
-Automate the ultimate, satirical capitalist simulator.
-**Never let the flow stop, or face divine wrath.**
+Welcome to a society built for one single purpose. **Deliver exactly one coin every second to your Deity.**
+
+The Deity is an astronomically-paid, deified mega-celebrity. Your sole job is to keep that counter steady.
+
+### ⚡ THE CHALLENGES
+* **Quash** violent monkey strikes before they halt production.
+* **Repair** catastrophic infrastructure breakdowns in real-time.
+* **Outsmart** brutal mafia sabotage and sudden political upheavals.
+* **Automate** the ultimate, satirical capitalist simulator.
+
+### ⚠️ THE GOLDEN RULE
+> **Never let the flow stop, or face divine wrath.**"
 
 <img src="https://raw.githubusercontent.com/mdesalvo/GoldChain/master/art-source/GoldChain.jpg" width="100%" />
 
