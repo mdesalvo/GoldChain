@@ -11,8 +11,7 @@ upheaval, and the Deity's inevitable wrath when the flow stops.
 ## Production chain
 
 ```
-Miners -> Haulers -> Smelters -> Goldsmiths -> Drivers
-   -> Bankers -> Tellers -> Payer -> [The Deity]
+Miners -> Transporters -> Smelters -> Minters -> Payer -> [The Deity]
 ```
 
 ## Societal layer

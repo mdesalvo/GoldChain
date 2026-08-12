@@ -20,9 +20,14 @@ tone is playful/cartoonish on the surface, pointed underneath.
 ## Production chain (the core loop)
 
 ```
-Miners -> Haulers -> Smelters -> Goldsmiths -> Drivers
-   -> Bankers -> Tellers -> Payer -> [The Deity]
+Miners -> Transporters -> Smelters -> Minters -> Payer -> [The Deity]
 ```
+
+Five stages, matching the concept art's own five (MINES, TRANSPORT,
+SMELTERS, MINTS, DELIVERY) rather than a finer-grained chain: earlier
+versions split transport into hauler/driver and minting into
+goldsmith/banker/teller, which put eight roles on screen where the
+concept draws five and made no visible difference to the player.
 
 Each stage is a monkey role. Gold flows through the chain and exits
 as coins delivered to the Deity. See `PIPELINE_ORDER` in

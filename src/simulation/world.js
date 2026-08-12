@@ -7,9 +7,15 @@ import { World } from "miniplex";
  * finite-state machine, plus shared components (position, health,
  * morale) used across systems.
  *
- * Pipeline roles (the production chain):
- *   miner -> hauler -> smelter -> goldsmith -> driver -> banker
- *   -> teller -> payer -> [Deity]
+ * Pipeline roles (the production chain): five stages, matching the
+ * concept art exactly rather than the finer-grained chain an earlier
+ * pass invented.
+ *   miner -> transporter -> smelter -> minter -> payer -> [Deity]
+ *
+ * Transporter covers what used to be two roles (hauler, driver) —
+ * the concept draws one "TRANSPORT" stage, not a hauling stage and a
+ * separate delivery-to-the-mint stage. Minter likewise covers the old
+ * goldsmith/banker/teller split: the concept's "MINTS" is one stage.
  *
  * Societal roles (systemic layer, not on the direct chain):
  *   unionizer, politician, doctor, nurse, police, mafioso
@@ -18,12 +24,9 @@ export const world = new World();
 
 export const ROLES = Object.freeze({
   MINER: "miner",
-  HAULER: "hauler",
+  TRANSPORTER: "transporter",
   SMELTER: "smelter",
-  GOLDSMITH: "goldsmith",
-  DRIVER: "driver",
-  BANKER: "banker",
-  TELLER: "teller",
+  MINTER: "minter",
   PAYER: "payer",
   UNIONIZER: "unionizer",
   POLITICIAN: "politician",
@@ -37,12 +40,9 @@ export const ROLES = Object.freeze({
 // systems to know what "next stage" means for a given role.
 export const PIPELINE_ORDER = [
   ROLES.MINER,
-  ROLES.HAULER,
+  ROLES.TRANSPORTER,
   ROLES.SMELTER,
-  ROLES.GOLDSMITH,
-  ROLES.DRIVER,
-  ROLES.BANKER,
-  ROLES.TELLER,
+  ROLES.MINTER,
   ROLES.PAYER,
 ];
 
@@ -119,12 +119,9 @@ export const SOCIETAL_ORDER = [
 export function seedInitialPopulation() {
   const counts = {
     [ROLES.MINER]: 6,
-    [ROLES.HAULER]: 4,
+    [ROLES.TRANSPORTER]: 6, // was hauler(4) + driver(2)
     [ROLES.SMELTER]: 3,
-    [ROLES.GOLDSMITH]: 3,
-    [ROLES.DRIVER]: 2,
-    [ROLES.BANKER]: 2,
-    [ROLES.TELLER]: 2,
+    [ROLES.MINTER]: 7, // was goldsmith(3) + banker(2) + teller(2)
     [ROLES.PAYER]: 1,
     [ROLES.UNIONIZER]: 2,
     [ROLES.POLITICIAN]: 1,

@@ -156,7 +156,9 @@ button {
 .at--ctrl   { left: 270px; top: 8px;   width: 56px; height: 56px; }
 .at--alert  { left: 1076px; top: 60px;  width: 292px; height: 192px; }
 .at--strip  { left: 270px;  top: 526px; width: 788px; height: 186px; }
-.at--purse  { left: 1076px; top: 0px; width: 292px; height: 57px; }
+/* Sixth box in the bottom row, right of Delivery — the concept's own
+   spot for it, not a corner near the alert readouts. */
+.at--purse  { left: 1066px; top: 526px; width: 302px; height: 186px; }
 
 .at--brand > *, .at--flow > *, .at--ctrl > *,
 .at--alert, .at--purse > * { height: 100%; }
@@ -360,7 +362,17 @@ button {
   );
 }
 
+/* A soft wash of the institution's own colour into the card background,
+   under the plate art and the wash gradient — subtle enough not to
+   fight the gold/near-black palette everything else uses, but enough
+   that Union reads faintly purple and Police faintly blue at a glance,
+   before you've read either label. */
 .sys {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent, var(--gold-dim)) 15%, rgba(30, 26, 22, 0.95)),
+    color-mix(in srgb, var(--accent, var(--gold-dim)) 8%, rgba(16, 13, 11, 0.95))
+  );
   transition: border-color 200ms ease, box-shadow 200ms ease;
   box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 224, 150, 0.07);
 }
@@ -750,6 +762,9 @@ button {
 .stagecard__body { padding: 5px 7px 6px; }
 
 .stagecard__name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -759,6 +774,8 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.stagecard__name .icon { flex: 0 0 auto; }
 
 .stagecard__stat {
   display: flex;
@@ -792,18 +809,30 @@ button {
   background: var(--gold);
 }
 
-/* The reserve, compacted to a single strip: a label, one number, its
-   cover, and the emergency-pay button, all on one line. */
+/* The reserve: a label, one number, its cover, and the emergency-pay
+   button, stacked the way the concept stacks them in its own sixth
+   box. Tinted gold like the rail cards are tinted by their own
+   institution, since the reserve doesn't have an institution colour of
+   its own — it's the Deity's. */
 .reservebar {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
   height: 100%;
-  padding: 0 12px;
-  overflow: hidden;
+  padding: 10px 14px;
+  border-left: 3px solid var(--gold-dim);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gold) 15%, rgba(30, 26, 22, 0.95)),
+    color-mix(in srgb, var(--gold) 8%, rgba(16, 13, 11, 0.95))
+  );
 }
 
 .reservebar__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -812,7 +841,7 @@ button {
 }
 
 .reservebar__value {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -825,8 +854,7 @@ button {
 }
 
 .reservebar__actions {
-  margin-left: auto;
-  flex: 0 0 auto;
+  margin-top: 4px;
 }
 
 /* --------------------------------------------------------------- alerts */

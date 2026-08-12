@@ -14,14 +14,13 @@ import { pick, randomRange } from "../../simulation/rng.js";
  * player can feel neglect turning into breakdowns.
  */
 
-// Stages with heavy machinery. Bankers and tellers have paperwork, not
-// furnaces, so they never break down.
+// Stages with heavy machinery. The payer just hands over coin, no
+// furnace involved, so it never breaks down.
 const MECHANISED_STAGES = [
   ROLES.MINER,
-  ROLES.HAULER,
+  ROLES.TRANSPORTER,
   ROLES.SMELTER,
-  ROLES.GOLDSMITH,
-  ROLES.DRIVER,
+  ROLES.MINTER,
 ];
 
 const WEAR_BUDGET_MIN = 70;

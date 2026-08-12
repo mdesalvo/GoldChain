@@ -22,19 +22,16 @@ import {
 
 const BASE_THROUGHPUT = {
   [ROLES.MINER]: 0.5, // gold units/sec per monkey
-  [ROLES.HAULER]: 0.6,
+  [ROLES.TRANSPORTER]: 0.7,
   [ROLES.SMELTER]: 0.5,
-  [ROLES.GOLDSMITH]: 0.5,
-  [ROLES.DRIVER]: 0.75,
-  [ROLES.BANKER]: 0.8,
-  [ROLES.TELLER]: 0.8,
+  [ROLES.MINTER]: 0.7,
   [ROLES.PAYER]: 1.8,
 };
 
 /**
  * Per-stage buffer capacity. Finite buffers are what give the chain
  * backpressure: block the smelters and gold piles up behind them until
- * the haulers have nowhere to put it, so a strike three stages
+ * the transporters have nowhere to put it, so a strike three stages
  * upstream is visible as a stalled front end rather than an
  * ever-growing invisible number. It also gives the mafia something
  * worth stealing.

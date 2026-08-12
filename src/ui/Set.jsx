@@ -19,10 +19,9 @@ import { REGIONS } from "./artRegions.js";
 // Which room a broken stage lights up.
 const STAGE_REGION = {
   [ROLES.MINER]: "mines",
-  [ROLES.HAULER]: "mines",
+  [ROLES.TRANSPORTER]: "mines",
   [ROLES.SMELTER]: "smelter",
-  [ROLES.GOLDSMITH]: "smelter",
-  [ROLES.DRIVER]: "mines",
+  [ROLES.MINTER]: "smelter",
 };
 
 export function Set() {
