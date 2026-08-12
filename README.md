@@ -1,14 +1,12 @@
 # GoldChain
 
-*(working title — the game will probably ship as **Divine Flow**.)*
-
 A satirical tycoon/idle game. A society of monkeys exists for a
 single purpose: deliver exactly **1 coin per second** to a deified,
 astronomically-paid celebrity. The player's job is to keep that
 number steady against strikes, breakdowns, mafia sabotage, political
 upheaval, and the Deity's inevitable wrath when the flow stops.
 
-<img src="https://raw.githubusercontent.com/mdesalvo/GoldChain/master/art-source/GoldChain.jpg" alt="The concept art the whole UI is built from" width="100%" />
+<!--img src="https://raw.githubusercontent.com/mdesalvo/GoldChain/master/art-source/GoldChain.jpg" alt="The concept art the whole UI is built from" width="100%" /-->
 
 ## Production chain
 
