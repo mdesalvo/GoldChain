@@ -169,7 +169,7 @@ export class EventsEngine {
 
       const description = entry.describe(snapshot);
       events.push({
-        type: entry.type,
+        system: entry.type,
         state: value,
         ...description,
       });
@@ -185,7 +185,7 @@ export class EventsEngine {
 
     if (outcome.message) {
       sink.notifications.push({
-        type: entry.type,
+        system: entry.type,
         tone: outcome.tone ?? "info",
         message: outcome.message,
       });
@@ -202,7 +202,7 @@ export class EventsEngine {
       const victim = injureRandomWorker();
       if (victim) {
         sink.notifications.push({
-          type: entry.type,
+          system: entry.type,
           tone: "bad",
           message: `A ${victim.role} was injured and taken to the hospital.`,
         });

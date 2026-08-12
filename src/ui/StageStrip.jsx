@@ -89,15 +89,14 @@ function StageCard({ stage, blocked, jammed }) {
 }
 
 /**
- * The bottom-right box: the reserve, and the mafia beside it.
+ * The reserve, top-right: one compact strip, not a box.
  *
- * Both are readouts with one button between them, which is why they share a
- * panel rather than each taking a slot in the rail.
+ * It used to share a tall panel with the mafia readout; now that the mafia
+ * is its own card in the rail, the reserve doesn't need that height —
+ * just the number, its cover, and the one button that spends it.
  */
 export function ReserveCard() {
   const reserves = useGameStore((s) => s.reserves);
-  const siphonRate = useGameStore((s) => s.siphonRate);
-  const corruption = useGameStore((s) => s.corruption);
   const reserveCapacity = useGameStore((s) => s.reserveCapacity);
   const targetRate = useGameStore((s) => s.targetRate);
   const taxedTotal = useGameStore((s) => s.taxedTotal);
@@ -108,51 +107,27 @@ export function ReserveCard() {
 
   return (
     <div
-      className="panel stagecard--reserve"
+      className="panel reservebar"
       title={
         `Coin banked between the chain and the Deity.\n` +
         `Skimmed by law: ${taxedTotal.toFixed(1)} · stolen: ${stolenTotal.toFixed(1)}`
       }
     >
-      <div className="ledger">
-        <div className="stagecard__name">
-          <Icon name="chest" size="sm" alt="" /> Reserves
-        </div>
-        <div
-          className="reserve__value"
-          style={{ color: cover < 6 ? "var(--bad)" : "var(--gold-bright)" }}
-        >
-          {reserves.toFixed(1)}
-        </div>
-        <div className="reserve__cover">
-          of {reserveCapacity} · {cover.toFixed(0)}s of cover
-        </div>
-        <div className="sys__actions">
-          {pickActions(actions, ["emergency-pay"]).map((action) => (
-            <ActionButton key={action.id} action={action} />
-          ))}
-        </div>
-      </div>
-
-      <div className="ledger">
-        <div className="stagecard__name" style={{ color: "var(--mafia)" }}>
-          <Icon name="mafiosi" size="sm" alt="" /> Mafiosi
-        </div>
-        <div
-          className="reserve__value"
-          style={{
-            fontSize: 21,
-            color: siphonRate > 0 ? "var(--bad)" : "var(--text-soft)",
-          }}
-        >
-          {siphonRate.toFixed(3)}
-        </div>
-        <div className="reserve__cover">units/sec siphoned</div>
-        <div className="ledger__note">
-          {siphonRate > 0
-            ? "A raid is under way on the convoys."
-            : `Quiet. Corruption ${Math.round(corruption)}%, waiting for a jam.`}
-        </div>
+      <Icon name="chest" size="sm" alt="" />
+      <span className="reservebar__label">Reserves</span>
+      <strong
+        className="reservebar__value"
+        style={{ color: cover < 6 ? "var(--bad)" : "var(--gold-bright)" }}
+      >
+        {reserves.toFixed(1)}
+      </strong>
+      <span className="reservebar__cover">
+        of {reserveCapacity} · {cover.toFixed(0)}s
+      </span>
+      <div className="reservebar__actions">
+        {pickActions(actions, ["emergency-pay"]).map((action) => (
+          <ActionButton key={action.id} action={action} />
+        ))}
       </div>
     </div>
   );

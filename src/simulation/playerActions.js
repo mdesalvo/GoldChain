@@ -365,7 +365,17 @@ export function performAction(id, store) {
 export function invokeAction(id) {
   const store = useGameStore.getState();
   const outcome = performAction(id, store);
-  if (outcome) store.pushNotifications([{ type: "action", ...outcome }]);
+  const action = byId.get(id);
+  if (outcome) {
+    // `actionId` is what a popup actually routes on (see `ACTION_CARD` in
+    // SystemRail.jsx): it's the button the player clicked, which is not
+    // always the same card as `action.system` implies. "Rehire" lives on
+    // the Union card because that's where the concept puts it, but its
+    // system is "chain" — it moves a worker out of *any* societal role,
+    // not just the union's. Routing on `system` alone left its outcome
+    // with nowhere to land.
+    store.pushNotifications([{ system: action?.system, actionId: id, ...outcome }]);
+  }
   return outcome;
 }
 

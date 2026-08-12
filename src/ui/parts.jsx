@@ -76,3 +76,20 @@ export function ActionButton({ action }) {
 export function pickActions(actions, ids) {
   return ids.map((id) => actions.find((a) => a.id === id)).filter(Boolean);
 }
+
+/**
+ * A single notification, shown where it happened rather than in a feed.
+ *
+ * Coloured by the card it's shown on (`--accent`, inherited from `.sys`)
+ * rather than by tone, so a popup reads as "this is the union talking"
+ * before it reads as good or bad news.
+ *
+ * Only the most recent one for a card is worth showing — a queue would
+ * need its own dismiss/read state, and the point is that this expires on
+ * its own (see `NOTIFICATION_TTL` in the store) a few seconds after the
+ * thing it describes.
+ */
+export function Popup({ notification }) {
+  if (!notification) return null;
+  return <div className="sys__popup">{notification.message}</div>;
+}

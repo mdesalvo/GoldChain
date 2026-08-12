@@ -93,7 +93,7 @@ button {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: url("/art/backdrop.jpg") center / cover no-repeat;
+  background: url("/art/backdrop2.jpg") center / cover no-repeat;
   filter: blur(46px) brightness(0.3) saturate(0.8);
   transform: scale(1.12);
 }
@@ -144,21 +144,19 @@ button {
    at least as large as theirs or their panel shows underneath — which is
    exactly what happened when the stage cards were shorter than the ones
    painted into the picture. */
-.at--brand  { left: 8px;    top: 8px;   width: 266px; height: 56px; }
-.at--flow   { left: 8px;    top: 66px;  width: 266px; height: 148px; }
-.at--rail   { left: 8px;    top: 216px; width: 266px; height: 492px;
+.at--brand  { left: 0px;    top: 8px;   width: 266px; height: 56px; }
+.at--flow   { left: 0px;    top: 66px;  width: 266px; height: 148px; }
+.at--rail   { left: 0px;    top: 216px; width: 266px; height: 552px;
               overflow: hidden;
               border-radius: var(--r);
               background: linear-gradient(180deg,
                 rgba(14, 11, 9, 0.96), rgba(9, 7, 6, 0.96));
               box-shadow: inset 0 0 0 1px rgba(232, 183, 67, 0.14);
               }
-.at--ctrl   { left: 280px; top: 8px;   width: 56px; height: 56px; }
+.at--ctrl   { left: 270px; top: 8px;   width: 56px; height: 56px; }
 .at--alert  { left: 1076px; top: 60px;  width: 292px; height: 192px; }
-.at--feed   { left: 1076px; top: 258px; width: 292px; height: 236px;
-              overflow: hidden; }
-.at--strip  { left: 276px;  top: 526px; width: 788px; height: 186px; }
-.at--purse  { left: 1022px; top: 518px; width: 346px; height: 186px; }
+.at--strip  { left: 270px;  top: 526px; width: 788px; height: 186px; }
+.at--purse  { left: 1076px; top: 0px; width: 292px; height: 57px; }
 
 .at--brand > *, .at--flow > *, .at--ctrl > *,
 .at--alert, .at--purse > * { height: 100%; }
@@ -380,7 +378,7 @@ button {
     inset 0 0 26px color-mix(in srgb, var(--accent, #e8b743) 22%, transparent);
 }
 
-.sys > *:not(.sys__plate):not(.sys__wash) { position: relative; }
+.sys > *:not(.sys__plate):not(.sys__wash):not(.sys__popup) { position: relative; }
 
 .sys__head {
   display: flex;
@@ -435,6 +433,35 @@ button {
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 4px;
+}
+
+/* What just happened on this card, in place of a shared feed. A tile in
+   the card's own colour, not a bar flush with its edges — flush-and-thin
+   read as part of the card's permanent furniture (the first version did,
+   against the card's own border of the same colour); inset and lifted
+   with its own shadow reads as something that just landed on top of it.
+   Pinned to the card's bottom rather than pushed into the layout, so one
+   institution's news never shoves its neighbours down the rail — the
+   card clips it (`.sys` has overflow: hidden) exactly like the plate
+   art. It disappears when the notification's TTL runs out in the store,
+   not on a CSS timer, so it stays in sync with pause. */
+.sys__popup {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  padding: 6px 9px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent, var(--gold)) 30%, #17130f 70%),
+    color-mix(in srgb, var(--accent, var(--gold)) 14%, #100d0a 86%)
+  );
+  border: 1px solid color-mix(in srgb, var(--accent, var(--gold)) 70%, #fff 30%);
+  border-radius: 5px;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.6);
 }
 
 /* ---------------------------------------------------------------- meter */
@@ -765,54 +792,42 @@ button {
   background: var(--gold);
 }
 
-/* Wider than a stage card, and no illustration: it is the end of the
-   chain, not a stage of it. */
-/* The concept's bottom-right box, now carrying two readouts. */
-.stagecard--reserve {
+/* The reserve, compacted to a single strip: a label, one number, its
+   cover, and the emergency-pay button, all on one line. */
+.reservebar {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
   height: 100%;
+  padding: 0 12px;
   overflow: hidden;
 }
 
-.ledger {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 8px 12px 10px;
+.reservebar__label {
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
 }
 
-.ledger + .ledger {
-  border-left: 1px solid var(--edge-soft);
-}
-
-.ledger__note {
-  font-size: 12px;
-  color: var(--text-soft);
-  line-height: 1.35;
-  margin-top: 4px;
-}
-
-.stagecard--reserve .stagecard__name {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 2px;
-}
-
-.reserve__value {
-  font-size: 30px;
+.reservebar__value {
+  font-size: 22px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-.reserve__cover {
-  font-size: 12px;
+.reservebar__cover {
+  font-size: 11px;
   color: var(--text-faint);
-  margin-top: 2px;
+  white-space: nowrap;
 }
 
-.stagecard--reserve .sys__actions { margin-top: 6px; }
+.reservebar__actions {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
 
 /* --------------------------------------------------------------- alerts */
 
@@ -862,65 +877,6 @@ button {
   margin-top: 4px;
   line-height: 1.45;
 }
-
-.reserve {
-  padding: 10px 12px;
-  margin-bottom: var(--gap);
-}
-
-.reserve__row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 6px 0 8px;
-}
-
-.reserve__value {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.reserve__cover { font-size: 12px; color: var(--text-faint); }
-
-.feed { display: flex; flex-direction: column; gap: 5px; }
-
-/* Pinned over the top-left of the plate: dark temple architecture, no
-   hotspot above a third of the way down on that side. Overlaying the art
-   is how the concept lays its own panels out, and it is the only place a
-   feed can go once the right rail is gone without taking width off the
-   picture. */
-.feed--overlay {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  width: 322px;
-  max-width: 42%;
-  z-index: 2;
-}
-
-.feed--overlay .feed__item {
-  border-radius: 4px;
-  background: rgba(8, 7, 10, 0.82);
-  backdrop-filter: blur(3px);
-}
-
-.feed__item {
-  display: flex;
-  gap: 7px;
-  align-items: baseline;
-  padding: 6px 9px;
-  font-size: 13px;
-  line-height: 1.35;
-  border-radius: 0 5px 5px 0;
-  border-left: 3px solid var(--tone, var(--gold));
-  background: rgba(8, 7, 10, 0.72);
-  cursor: pointer;
-}
-
-.feed__item:hover { background: rgba(30, 26, 22, 0.9); }
-.feed__mark { color: var(--tone, var(--gold)); }
 
 /* No responsive breakpoints: the design space scales as one piece, which
    is the point of it. A phone gets the same screen, smaller. */

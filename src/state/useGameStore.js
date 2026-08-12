@@ -9,10 +9,14 @@ import { create } from "zustand";
  * only to protect that single number.
  */
 
-const MAX_NOTIFICATIONS = 8;
+// How long a notification stays up before it expires on its own. Ticked
+// down alongside the simulation (see `decayNotifications`), so it freezes
+// with everything else when the game is paused rather than draining in
+// the background.
+const NOTIFICATION_TTL = 5;
 let notificationId = 0;
 
-export const useGameStore = create((set, get) => ({
+export const useGameStore = create((set) => ({
   // --- Core tribute loop ---
   coinsDelivered: 0,
   // The Deity's standing demand. Ratchets up permanently on long clean
@@ -136,20 +140,18 @@ export const useGameStore = create((set, get) => ({
     const stamped = incoming.map((n) => ({
       ...n,
       id: ++notificationId,
-      at: get().coinsDelivered,
+      ttl: NOTIFICATION_TTL,
     }));
-    set((s) => ({
-      // Newest first, oldest evicted — this is a feed, not a log.
-      notifications: [...stamped.reverse(), ...s.notifications].slice(
-        0,
-        MAX_NOTIFICATIONS
-      ),
-    }));
+    set((s) => ({ notifications: [...s.notifications, ...stamped] }));
   },
 
-  dismissNotification: (id) =>
+  /** Counts every live notification down; each card only ever sees the
+   *  ones addressed to its own system, and they vanish on their own. */
+  decayNotifications: (dt) =>
     set((s) => ({
-      notifications: s.notifications.filter((n) => n.id !== id),
+      notifications: s.notifications
+        .map((n) => ({ ...n, ttl: n.ttl - dt }))
+        .filter((n) => n.ttl > 0),
     })),
 
   togglePaused: () => set((s) => ({ paused: !s.paused })),

@@ -116,6 +116,7 @@ export function stepSimulation(dt) {
   const allNotifications = [...notifications, ...deity.notifications];
   if (wrath?.notification) allNotifications.push(wrath.notification);
   store.pushNotifications(allNotifications);
+  store.decayNotifications(dt);
 }
 
 export function publishSnapshot() {

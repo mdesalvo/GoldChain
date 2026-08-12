@@ -5,7 +5,6 @@ import { useDesignScale } from "./ui/Screen.jsx";
 import { BrandPanel, FlowPanel } from "./ui/BrandPanel.jsx";
 import { ControlPanel } from "./ui/ClockBar.jsx";
 import { AlertBox } from "./ui/AlertBox.jsx";
-import { FeedPanel } from "./ui/FeedPanel.jsx";
 import { SystemRail } from "./ui/SystemRail.jsx";
 import { StageStrip, ReserveCard } from "./ui/StageStrip.jsx";
 import { useGameLoop } from "./simulation/useGameLoop.js";
@@ -57,7 +56,6 @@ export default function App() {
           <ControlPanel />
         </div>
         <div className="at at--alert"><AlertBox /></div>
-        <div className="at at--feed"><FeedPanel /></div>
         <div className="at at--strip"><StageStrip /></div>
         <div className="at at--purse"><ReserveCard /></div>
       </div>
