@@ -169,7 +169,7 @@ export class EventsEngine {
 
       const description = entry.describe(snapshot);
       events.push({
-        system: entry.type,
+        type: entry.type,
         state: value,
         ...description,
       });
