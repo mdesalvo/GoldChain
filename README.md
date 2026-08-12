@@ -45,6 +45,6 @@ npm run dev
 
 Open the printed URL. The screen is the society in cross-section —
 the Deity enthroned above, the chain grinding below — with the panels of
-a management game laid over it: the flow you are keeping alive, the four
+a management game laid over it: the flow you are keeping alive, the five
 institutions you can spend on, the work units along the bottom, and the
 reserve the tribute is actually paid from.
