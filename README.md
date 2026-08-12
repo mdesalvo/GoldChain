@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/mdesalvo/GoldChain/master/art-source/GoldChain.jpg" width="100%" />
 
-# 🪙 Gold Chain - The ultimate, satirical capitalist simulator
+# 🪙 Gold Chain - Satirical capitalist simulator
 
 Welcome to a society built for one single purpose. **Deliver exactly one coin every second to your Deity.**
 
