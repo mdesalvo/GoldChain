@@ -150,23 +150,23 @@ button {
    column, so any gap between our cards showed its captions ("Current Laws
    (11)", "Siphoning: 0.157 coins/sec") through from underneath. */
 .at--rail   { left: 8px;    top: 216px; width: 224px; height: 492px;
-              overflow-y: auto; overflow-x: hidden;
+              overflow: hidden;
               border-radius: var(--r);
               background: linear-gradient(180deg,
                 rgba(14, 11, 9, 0.96), rgba(9, 7, 6, 0.96));
               box-shadow: inset 0 0 0 1px rgba(232, 183, 67, 0.14);
-              /* Five cards come to a little more than the 492 the concept
-                 gives the rail, so the last one scrolls. The fade says so
-                 rather than letting it look clipped. */
-              mask-image: linear-gradient(180deg, #000 94%, transparent 100%);
-              -webkit-mask-image: linear-gradient(180deg, #000 94%, transparent 100%); }
+              }
 .at--clock  { left: 1036px; top: 8px;   width: 164px; height: 46px; }
 .at--ctrl   { left: 1202px; top: 8px;   width: 170px; height: 46px; }
 .at--alert  { left: 1076px; top: 60px;  width: 292px; height: 192px; }
 .at--feed   { left: 1076px; top: 258px; width: 292px; height: 236px;
               overflow: hidden; }
-.at--strip  { left: 230px;  top: 518px; width: 904px; height: 186px; }
-.at--purse  { left: 1138px; top: 518px; width: 230px; height: 186px; }
+.at--strip  { left: 230px;  top: 518px; width: 788px; height: 186px; }
+/* Widened to take the mafia readout off the rail. The mafia is the one
+   institution with nothing to click, so it is a readout, and readouts
+   belong next to the other bottom-row readout. Its ~70px back in the rail
+   is exactly what the fifth card needed. */
+.at--purse  { left: 1022px; top: 518px; width: 346px; height: 186px; }
 .at--tabs   { left: 8px;    top: 710px; width: 1360px; height: 50px; }
 
 .at--brand > *, .at--flow > *, .at--clock > *, .at--ctrl > *,
@@ -498,24 +498,38 @@ button {
 
 /* --------------------------------------------------------------- action */
 
+/* Sized so two fit on one row of the 224px rail. Three buttons stacking
+   into three rows is what pushed the rail past its box.
+
+   The colour is the institution's, inherited from the card's --accent, the
+   way the concept colours NEGOTIATE purple, LOBBY blue, BUILD HOSPITAL
+   green and INVESTIGATE red. A button that doesn't belong to a card — the
+   reserve's EMERGENCY PAY — falls back to gold, which is what the concept
+   does with it too. */
 .action {
-  padding: 3px 6px;
-  font-size: 12px;
+  padding: 3px 5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-  border: 1px solid var(--gold-bright);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent, #e8b743) 90%, #fff 10%),
+    color-mix(in srgb, var(--accent, #e8b743) 72%, #000 28%)
+  );
+  border: 1px solid color-mix(in srgb, var(--accent, #e8b743) 55%, #fff 45%);
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.action:hover { filter: brightness(1.12); }
+.action:hover { filter: brightness(1.14); }
 
 .action:disabled {
   color: var(--text-faint);
+  text-shadow: none;
   background: rgba(255, 255, 255, 0.04);
   border-color: var(--edge-soft);
   cursor: default;
@@ -523,7 +537,7 @@ button {
 }
 
 .action__cost {
-  margin-left: 4px;
+  margin-left: 3px;
   opacity: 0.7;
   font-weight: 400;
 }
@@ -736,7 +750,7 @@ button {
 .stagecard__body { padding: 5px 7px 6px; }
 
 .stagecard__name {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -749,10 +763,11 @@ button {
 .stagecard__stat {
   display: flex;
   justify-content: space-between;
-  gap: 4px;
-  font-size: 11px;
+  gap: 3px;
+  font-size: 10.5px;
   color: var(--text-soft);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .stagecard__rate {
@@ -779,10 +794,29 @@ button {
 
 /* Wider than a stage card, and no illustration: it is the end of the
    chain, not a stage of it. */
-/* The reserve panel: the concept's bottom-right box. */
+/* The concept's bottom-right box, now carrying two readouts. */
 .stagecard--reserve {
-  padding: 8px 12px 10px;
+  display: flex;
+  align-items: stretch;
   height: 100%;
+  overflow: hidden;
+}
+
+.ledger {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 12px 10px;
+}
+
+.ledger + .ledger {
+  border-left: 1px solid var(--edge-soft);
+}
+
+.ledger__note {
+  font-size: 12px;
+  color: var(--text-soft);
+  line-height: 1.35;
+  margin-top: 4px;
 }
 
 .stagecard--reserve .stagecard__name {

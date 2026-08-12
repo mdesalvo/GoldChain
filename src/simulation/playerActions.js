@@ -90,6 +90,10 @@ function fattestSocietalRole() {
  * impossible after all). Neither may assume it is called at any
  * particular point in the tick.
  *
+ * Labels are single words wherever possible, as the concept's are: long
+ * ones wrapped three buttons onto three rows and pushed the system rail
+ * past the box the concept gives it. The hint carries the meaning.
+ *
  * Prices are set against the reserve's fill rate, not picked for feel.
  * Surplus production is roughly a quarter of a coin per second, so a
  * 12-cost retraining is about 45 seconds of flawless operation and
@@ -121,7 +125,7 @@ export const ACTIONS = [
 
   {
     id: "back-bill",
-    label: "Back bill",
+    label: "Back",
     system: EVENT_TYPES.LEGISLATION,
     cost: 8,
     cooldown: 5,
@@ -138,7 +142,7 @@ export const ACTIONS = [
 
   {
     id: "block-bill",
-    label: "Block bill",
+    label: "Block",
     system: EVENT_TYPES.LEGISLATION,
     cost: 8,
     cooldown: 5,
@@ -156,7 +160,7 @@ export const ACTIONS = [
 
   {
     id: "crackdown",
-    label: "Crack down",
+    label: "Raid",
     system: EVENT_TYPES.MAFIA_RAID,
     cost: 8,
     cooldown: 8,
@@ -185,7 +189,7 @@ export const ACTIONS = [
 
   {
     id: "staff-hospital",
-    label: "Staff hospital",
+    label: "Build ward",
     system: "medical",
     cost: 12,
     cooldown: 15,
@@ -205,7 +209,7 @@ export const ACTIONS = [
 
   {
     id: "hire-police",
-    label: "Hire police",
+    label: "Hire",
     system: EVENT_TYPES.MAFIA_RAID,
     cost: 12,
     cooldown: 15,
@@ -225,7 +229,7 @@ export const ACTIONS = [
 
   {
     id: "fund-union",
-    label: "Fund union",
+    label: "Fund",
     system: EVENT_TYPES.STRIKE,
     cost: 12,
     cooldown: 15,
@@ -243,7 +247,7 @@ export const ACTIONS = [
 
   {
     id: "back-to-work",
-    label: "To the chain",
+    label: "Rehire",
     system: "chain",
     cost: 3,
     cooldown: 15,

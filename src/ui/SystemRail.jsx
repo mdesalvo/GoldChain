@@ -12,10 +12,14 @@ import { ActionButton, Icon, Meter, pickActions } from "./parts.jsx";
  * matching region of the concept's cross-section, so a card looks like the
  * place it governs.
  *
- * There is no machinery card, also as in the concept: a breakdown shows up
- * on the stage card that stopped, as a badge on the set, and in the feed.
- * A sixth card for it pushed the rail past the bottom of the window, which
- * cost more than it explained.
+ * Four cards, one per institution the player can actually spend on. The
+ * concept has five, but its fifth is the mafia, which has nothing to click:
+ * that is a readout, and it lives with the other bottom-row readout beside
+ * the reserve. Reclaiming its height is what lets these four fit the rail
+ * without scrolling.
+ *
+ * There is no machinery card either: a breakdown shows up on the stage card
+ * that stopped, as a badge on the set, and in the feed.
  */
 
 // States that mean "this system is currently a problem".
@@ -37,7 +41,6 @@ export function SystemRail() {
   const stability = useGameStore((s) => s.politicalStability);
   const injured = useGameStore((s) => s.injuredCount);
   const capacity = useGameStore((s) => s.treatmentCapacity);
-  const siphonRate = useGameStore((s) => s.siphonRate);
 
   const eventOf = (type) => events.find((e) => e.type === type);
   const strike = eventOf(EVENT_TYPES.STRIKE);
@@ -111,18 +114,6 @@ export function SystemRail() {
       >
         <Meter label="Corruption" value={corruption} color="var(--bad)" />
       </SystemCard>
-
-      <SystemCard
-        icon="mafiosi"
-        name="Mafiosi"
-        accent="var(--mafia)"
-        plate="mafia"
-        detail={
-          siphonRate > 0
-            ? `Siphoning ${siphonRate.toFixed(3)} units/sec out of the convoys.`
-            : "Quiet. Watching the buffers fill, waiting for a jam."
-        }
-      />
 
     </div>
   );
