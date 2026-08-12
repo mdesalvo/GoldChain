@@ -1,15 +1,13 @@
 import "./ui/theme.css";
-import { useState } from "react";
 import { useGameStore } from "./state/useGameStore.js";
 import { Set } from "./ui/Set.jsx";
 import { useDesignScale } from "./ui/Screen.jsx";
 import { BrandPanel, FlowPanel } from "./ui/BrandPanel.jsx";
-import { ClockPanel, ControlPanel } from "./ui/ClockBar.jsx";
+import { ControlPanel } from "./ui/ClockBar.jsx";
 import { AlertBox } from "./ui/AlertBox.jsx";
 import { FeedPanel } from "./ui/FeedPanel.jsx";
 import { SystemRail } from "./ui/SystemRail.jsx";
 import { StageStrip, ReserveCard } from "./ui/StageStrip.jsx";
-import { TabBar } from "./ui/TabBar.jsx";
 import { useGameLoop } from "./simulation/useGameLoop.js";
 import { ensureSeeded } from "./simulation/world.js";
 import {
@@ -38,7 +36,6 @@ fastForwardFromUrl();
  * written into a panel by JavaScript.
  */
 export default function App() {
-  const [showScene, setShowScene] = useState(false);
   const scale = useDesignScale();
   const flowMet = useGameStore((s) => s.flowMet);
   useGameLoop();
@@ -51,23 +48,18 @@ export default function App() {
         className={`design${flowMet ? "" : " design--stalled"}`}
         style={{ "--design-scale": scale }}
       >
-        <Set showScene={showScene} />
+        <Set />
 
         <div className="at at--brand"><BrandPanel /></div>
         <div className="at at--flow"><FlowPanel /></div>
         <div className="at at--rail"><SystemRail /></div>
-        <div className="at at--clock"><ClockPanel /></div>
         <div className="at at--ctrl">
-          <ControlPanel
-            showScene={showScene}
-            onToggleScene={() => setShowScene((on) => !on)}
-          />
+          <ControlPanel />
         </div>
         <div className="at at--alert"><AlertBox /></div>
         <div className="at at--feed"><FeedPanel /></div>
         <div className="at at--strip"><StageStrip /></div>
         <div className="at at--purse"><ReserveCard /></div>
-        <div className="at at--tabs"><TabBar /></div>
       </div>
     </>
   );

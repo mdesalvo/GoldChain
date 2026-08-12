@@ -61,7 +61,7 @@ export function SystemRail() {
           "back-to-work",
         ])}
       >
-        <Meter label="Worker wellbeing" value={wellbeing} color="var(--good)" />
+        <Meter label="Worker wellbeing" value={wellbeing} color="var(--union)" />
       </SystemCard>
 
       <SystemCard
@@ -112,7 +112,7 @@ export function SystemRail() {
           "hire-police",
         ])}
       >
-        <Meter label="Corruption" value={corruption} color="var(--bad)" />
+        <Meter label="Corruption" value={corruption} color="var(--security)" />
       </SystemCard>
 
     </div>

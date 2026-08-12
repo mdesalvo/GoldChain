@@ -144,33 +144,24 @@ button {
    at least as large as theirs or their panel shows underneath — which is
    exactly what happened when the stage cards were shorter than the ones
    painted into the picture. */
-.at--brand  { left: 8px;    top: 8px;   width: 306px; height: 56px; }
-.at--flow   { left: 8px;    top: 66px;  width: 226px; height: 148px; }
-/* Opaque, not just a container: the concept's own rail is a continuous
-   column, so any gap between our cards showed its captions ("Current Laws
-   (11)", "Siphoning: 0.157 coins/sec") through from underneath. */
-.at--rail   { left: 8px;    top: 216px; width: 224px; height: 492px;
+.at--brand  { left: 8px;    top: 8px;   width: 266px; height: 56px; }
+.at--flow   { left: 8px;    top: 66px;  width: 266px; height: 148px; }
+.at--rail   { left: 8px;    top: 216px; width: 266px; height: 492px;
               overflow: hidden;
               border-radius: var(--r);
               background: linear-gradient(180deg,
                 rgba(14, 11, 9, 0.96), rgba(9, 7, 6, 0.96));
               box-shadow: inset 0 0 0 1px rgba(232, 183, 67, 0.14);
               }
-.at--clock  { left: 1036px; top: 8px;   width: 164px; height: 46px; }
-.at--ctrl   { left: 1202px; top: 8px;   width: 170px; height: 46px; }
+.at--ctrl   { left: 280px; top: 8px;   width: 56px; height: 56px; }
 .at--alert  { left: 1076px; top: 60px;  width: 292px; height: 192px; }
 .at--feed   { left: 1076px; top: 258px; width: 292px; height: 236px;
               overflow: hidden; }
-.at--strip  { left: 230px;  top: 518px; width: 788px; height: 186px; }
-/* Widened to take the mafia readout off the rail. The mafia is the one
-   institution with nothing to click, so it is a readout, and readouts
-   belong next to the other bottom-row readout. Its ~70px back in the rail
-   is exactly what the fifth card needed. */
+.at--strip  { left: 276px;  top: 526px; width: 788px; height: 186px; }
 .at--purse  { left: 1022px; top: 518px; width: 346px; height: 186px; }
-.at--tabs   { left: 8px;    top: 710px; width: 1360px; height: 50px; }
 
-.at--brand > *, .at--flow > *, .at--clock > *, .at--ctrl > *,
-.at--alert, .at--purse > *, .at--tabs > * { height: 100%; }
+.at--brand > *, .at--flow > *, .at--ctrl > *,
+.at--alert, .at--purse > * { height: 100%; }
 
 .at--rail::-webkit-scrollbar { width: 5px; }
 .at--rail::-webkit-scrollbar-thumb {
@@ -290,19 +281,7 @@ button {
   color: var(--bad);
 }
 
-/* --------------------------------------------------------- clock, speed */
-
-.clock {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 10px 14px;
-  font-variant-numeric: tabular-nums;
-}
-
-.clock__day { font-size: 15px; font-weight: 700; white-space: nowrap; }
-.clock__time { font-size: 13px; color: var(--text-soft); white-space: nowrap; }
+/* ------------------------------------------------------------- controls */
 
 .timectl {
   display: flex;
@@ -340,12 +319,6 @@ button {
   height: 14px;
   border-left: 4px solid currentColor;
   border-right: 4px solid currentColor;
-}
-
-.tbtn__x4 {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
 }
 
 /* ----------------------------------------------------------- system card */
@@ -948,67 +921,6 @@ button {
 
 .feed__item:hover { background: rgba(30, 26, 22, 0.9); }
 .feed__mark { color: var(--tone, var(--gold)); }
-
-/* ----------------------------------------------------------------- tabs */
-
-.tabs {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 8px;
-}
-
-.tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 13px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.9px;
-  text-transform: uppercase;
-  color: var(--text-soft);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
-
-.tab--on {
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-  border-color: var(--gold-bright);
-}
-
-.tab:disabled {
-  color: var(--text-faint);
-  cursor: default;
-  background: transparent;
-}
-
-.tab__soon {
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-faint);
-}
-
-.tabs__spacer { flex: 1 1 auto; }
-
-.purse {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 12px;
-  font-size: 15px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  border-left: 1px solid var(--edge-soft);
-}
 
 /* No responsive breakpoints: the design space scales as one piece, which
    is the point of it. A phone gets the same screen, smaller. */

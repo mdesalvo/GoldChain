@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useGameStore } from "../state/useGameStore.js";
 import { EVENT_TYPES } from "../events/eventTypes.js";
 import { ROLES } from "../simulation/world.js";
-import { Scene } from "../render/Scene.jsx";
 import { REGIONS } from "./artRegions.js";
 
 /**
@@ -26,11 +25,9 @@ const STAGE_REGION = {
   [ROLES.DRIVER]: "mines",
 };
 
-export function Set({ showScene }) {
+export function Set() {
   const events = useGameStore((s) => s.activeEvents);
   const injured = useGameStore((s) => s.injuredCount);
-
-  if (showScene) return <Scene />;
 
   return (
     <>

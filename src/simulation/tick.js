@@ -44,7 +44,6 @@ export function stepSimulation(dt) {
   }
 
   stepActionCooldowns(dt);
-  store.advanceClock(dt);
 
   // 3. Workforce: blocks, accidents, treatment.
   stepMonkeyStates(dt, modifiers.blockedRoles);
