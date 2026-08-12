@@ -53,12 +53,17 @@ strict upgrade tree.
 ## Architecture
 
 ```
-UI Layer        React + Zustand        game shell: rails, stage cards, feed
-Render Layer    painted backdrop       concept-art cross-section + overlays
+UI Layer        React + CSS            panels over a full-window painted set
+Render Layer    concept art            painted backdrop, state pinned on it
                 React Three Fiber      live 3D view, behind a toggle
 Simulation      Miniplex (ECS)         fixed-tick (15Hz) pipeline + monkey FSM
 Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
 ```
+
+The screen is the concept art, full window, with every panel laid over
+it in the place the concept put it. Nothing animates: what changes is
+data being written into a panel, plus one state change (the set drains of
+colour when the tribute fails).
 
 ### Why these choices
 
@@ -198,21 +203,33 @@ mirrored in the percentages would silently put the strike badge somewhere
 other than the picket line. Anchors are declared in concept pixels; the
 conversion is the script's job, not a human's.
 
-### Cropping the backdrop
+### Painting out the concept's UI
 
-Bounded by the concept's own UI, measured off the rendered plate rather
-than off where the panels appear to end — their glows and rounded corners
-reach further than they look. Two boxes were wrong before this one: the
-first started at y=54 and beheaded the Deity at the sunglasses, and the
-second kept fragments of the brand and "Day 451" plates in the corners.
-Check the plate's edges after any change.
+Their panels are opaque, so there is no art under them to recover. Each
+footprint is filled by stretching a thin slice of the adjacent art, then
+blurring and dimming it. Two other fills were tried and both failed
+visibly: flat colour left a dead band wherever our responsive panels
+didn't land exactly on their fixed-layout footprints, and mirroring the
+neighbouring art duplicated the picket signs and the salary placard,
+reversed lettering and all.
 
-### The centre pane is a painted backdrop, not a rendered scene
+Check the backdrop's edges after any change to `CONCEPT_UI`.
 
-It is letterboxed at its exact aspect ratio rather than cropped to fill,
-because cropping slides the hotspots off their rooms. The R3F scene is
-still the honest view of the simulation — every capsule is a real entity —
-behind the viewport's corner toggle.
+### The set is the window
+
+The backdrop is the whole concept image, drawn `cover` behind everything,
+with the regions the concept's own UI occupied painted back out. Our
+panels go where theirs were. That is the only layout in which the art gets
+the whole window rather than whatever the side rails leave over — a
+cropped plate in a pane lost both the rails' width and every region their
+UI had been sitting on.
+
+Because it is drawn `cover`, a percentage of the image is not a percentage
+of the window: `Backdrop.jsx` converts, and re-converts on resize. Badge
+anchors come from `artRegions.js`, which is generated.
+
+The R3F scene is still the honest view of the simulation — every capsule
+is a real entity — behind the toggle in the clock bar.
 
 ### Nothing animates
 

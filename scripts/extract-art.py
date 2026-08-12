@@ -28,7 +28,7 @@ import os
 import shutil
 import subprocess
 import sys
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 SOURCE = "art-source"
 STILL = f"{SOURCE}/GoldChain.jpg"
@@ -36,29 +36,49 @@ OUT = "public/art"
 
 # Boxes are (left, top, right, bottom) on the 1376x768 concept still.
 
-# The cross-section: the largest rectangle of pure artwork in the concept.
+# --------------------------------------------------------------- backdrop
 #
-# Bounded by the concept's own UI, measured off the rendered plate rather
-# than off the panels' apparent edges — their glows and rounded corners
-# reach further than they look. The brand plate bleeds to x=316 and the
-# "Day 451" plate to x=1050; the stage cards start at y=515. It runs to
-# y=0 because an earlier box started at y=54 and beheaded the Deity at the
-# sunglasses, and the whole point of the picture is the idol.
+# The whole concept image is the backdrop, with the regions its own UI
+# occupied painted out. That is the trick that makes the artwork as big as
+# the window: our panels go where theirs were, and no art has to be
+# cropped to stay clear of them. The tight crop this replaced threw away
+# the MAFIA corner and half the temple.
 #
-# HOTSPOTS below are anchored in concept pixels and converted against this
-# box by `write_regions()`, so changing the crop can no longer silently
-# slide them off their rooms.
-BACKDROP = (320, 0, 1046, 515)
+# Each footprint is filled by stretching a thin slice of the art adjacent
+# to one of its edges, then blurring and dimming it. Two other fills were
+# tried first and both failed visibly:
+#
+#   flat colour — left a dead band wherever our responsive panels didn't
+#   land exactly on their fixed-layout footprint
+#
+#   mirroring the neighbouring art — duplicated the picket signs and the
+#   salary placard, reversed lettering and all
+#
+# A stretched slice smears into plausible depth instead, and since these
+# regions sit behind panels or under the vignette, plausible is enough.
+#
+# (box, which edge to take the slice from)
+CONCEPT_UI = [
+    ((228, 500, 1376, 708), "top"),     # stage strip and reserves
+    ((0, 688, 1376, 768), "top"),       # tab bar
+    ((0, 218, 242, 692), "right"),      # system rail
+    ((0, 0, 322, 220), "right"),        # brand plate and flow readout
+    ((1070, 52, 1376, 264), "left"),    # alert panel
+    ((1030, 0, 1376, 60), "bottom"),    # day, clock, speed, settings
+]
 
-# Where each part of the society sits in the painting, in concept pixels,
-# with which edge the label should hang off when it is near one.
+SLICE = 10
+
+# Anchors for the state badges pinned on the backdrop, in concept pixels.
+# The mafia corner is deliberately absent: it sits under the right-hand
+# column at every window size, exactly as it does in the concept.
 HOTSPOTS = {
-    "union": (372, 175, "left"),
-    "politicians": (879, 190, "center"),
-    "hospital": (844, 310, "center"),
-    "police": (1010, 400, "right"),
-    "mines": (414, 320, "center"),
-    "smelter": (369, 430, "left"),
+    "union": (365, 200, "center"),
+    "politicians": (877, 200, "center"),
+    "hospital": (845, 320, "center"),
+    "police": (1040, 400, "right"),
+    "mines": (400, 320, "center"),
+    "smelter": (330, 430, "left"),
 }
 
 # Written next to the UI that consumes it.
@@ -107,6 +127,13 @@ ICONS = {
     "flame": (414, 522, 442, 554),
     "cart": (584, 522, 614, 554),
     "coinstage": (757, 522, 787, 554),
+    # Chrome the new UI needs in order to look like the concept rather
+    # than like a reimplementation of it.
+    "check": (168, 152, 210, 194),
+    "bolt": (1096, 76, 1116, 100),
+    "play": (1248, 12, 1288, 48),
+    "fastforward": (1292, 12, 1332, 48),
+    "settings": (1336, 12, 1370, 48),
 }
 
 # Formats this script used to emit, swept on every run so a stale asset
@@ -166,7 +193,37 @@ def optimise(paths):
     ]
 
 
-def write_regions():
+def build_backdrop(src):
+    """Paints out the concept's own UI."""
+    out = src.copy()
+    W, H = out.size
+
+    for (x0, y0, x1, y1), edge in CONCEPT_UI:
+        w, h = x1 - x0, y1 - y0
+        if edge == "top":
+            donor = out.crop((x0, y0 - SLICE, x1, y0))
+        elif edge == "bottom":
+            donor = out.crop((x0, y1, x1, y1 + SLICE))
+        elif edge == "right":
+            donor = out.crop((x1, y0, x1 + SLICE, y1))
+        else:
+            donor = out.crop((x0 - SLICE, y0, x0, y1))
+
+        donor = donor.resize((w, h), Image.BILINEAR)
+        donor = donor.filter(ImageFilter.GaussianBlur(9))
+        donor = donor.point(lambda v: int(v * 0.6))
+        out.paste(donor, (x0, y0))
+
+    # Soften the joins so the patches don't announce themselves.
+    seams = Image.new("L", (W, H), 0)
+    draw = ImageDraw.Draw(seams)
+    for box, _ in CONCEPT_UI:
+        draw.rectangle(box, outline=255, width=12)
+    seams = seams.filter(ImageFilter.GaussianBlur(8))
+    return Image.composite(out.filter(ImageFilter.GaussianBlur(5)), out, seams)
+
+
+def write_regions(src):
     """Emits the backdrop's aspect ratio and the hotspot anchors as
     percentages of the plate.
 
@@ -175,23 +232,25 @@ def write_regions():
     change to the crop that isn't mirrored in the percentages puts the
     strike badge somewhere other than the picket line, silently.
     """
-    left, top, right, bottom = BACKDROP
-    width, height = right - left, bottom - top
+    width, height = src.size
 
     lines = [
         "// Generated by scripts/extract-art.py — do not edit by hand.",
         "//",
-        "// The backdrop crop and everything positioned against it. Hotspot",
-        "// coordinates are percentages of the plate, derived from anchors",
+        "// The backdrop and everything positioned against it. Hotspot",
+        "// coordinates are percentages of the backdrop, derived from anchors",
         "// given in concept pixels, so the two cannot drift apart.",
+        "//",
+        "// The backdrop is drawn `cover`, so a percentage of the image is not",
+        "// a percentage of the window: Backdrop.jsx does that conversion.",
         "",
-        f"export const PLATE_ASPECT = {width} / {height};",
+        f"export const BACKDROP_ASPECT = {width} / {height};",
         "",
         "export const REGIONS = {",
     ]
     for name, (x, y, align) in HOTSPOTS.items():
-        px = 100 * (x - left) / width
-        py = 100 * (y - top) / height
+        px = 100 * x / width
+        py = 100 * y / height
         lines.append(
             f'  {name}: {{ left: "{px:.1f}%", top: "{py:.1f}%", '
             f'align: "{align}" }},'
@@ -218,9 +277,11 @@ def extract():
     src = Image.open(STILL).convert("RGB")
     written = []
 
-    for box, path in ((BACKDROP, f"{OUT}/diorama.jpg"), (DEITY, f"{OUT}/deity.jpg")):
-        src.crop(box).save(path, quality=92)
-        written.append(path)
+    build_backdrop(src).save(f"{OUT}/backdrop.jpg", quality=90)
+    written.append(f"{OUT}/backdrop.jpg")
+
+    src.crop(DEITY).save(f"{OUT}/deity.jpg", quality=92)
+    written.append(f"{OUT}/deity.jpg")
 
     for group, boxes in (("sys", SYSTEMS), ("stage", STAGES)):
         os.makedirs(f"{OUT}/{group}", exist_ok=True)
@@ -245,7 +306,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     swept = sweep_retired()
     written = extract()
-    regions = write_regions()
+    regions = write_regions(Image.open(STILL))
     before, after, missing = optimise(written)
     saved = 100 * (1 - after / before) if before else 0
 

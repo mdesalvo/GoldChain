@@ -8,9 +8,14 @@ import { ActionButton, Icon, Meter, pickActions } from "./parts.jsx";
  * and the buttons that let them do something about it.
  *
  * Layout and content follow the concept art: metric first, state second,
- * actions last. The art plate behind each card comes from the matching
- * region of the concept's cross-section, so a card looks like the place
- * it governs.
+ * actions last, five cards. The art plate behind each card comes from the
+ * matching region of the concept's cross-section, so a card looks like the
+ * place it governs.
+ *
+ * There is no machinery card, also as in the concept: a breakdown shows up
+ * on the stage card that stopped, as a badge on the set, and in the feed.
+ * A sixth card for it pushed the rail past the bottom of the window, which
+ * cost more than it explained.
  */
 
 // States that mean "this system is currently a problem".
@@ -33,16 +38,11 @@ export function SystemRail() {
   const injured = useGameStore((s) => s.injuredCount);
   const capacity = useGameStore((s) => s.treatmentCapacity);
   const siphonRate = useGameStore((s) => s.siphonRate);
-  const stages = useGameStore((s) => s.stages);
 
   const eventOf = (type) => events.find((e) => e.type === type);
   const strike = eventOf(EVENT_TYPES.STRIKE);
   const law = eventOf(EVENT_TYPES.LEGISLATION);
   const raid = eventOf(EVENT_TYPES.MAFIA_RAID);
-  const machinery = eventOf(EVENT_TYPES.BREAKDOWN);
-
-  const chainWorkers = stages.reduce((sum, s) => sum + s.workers, 0);
-  const chainTotal = stages.reduce((sum, s) => sum + s.total, 0);
 
   return (
     <div>
@@ -52,7 +52,11 @@ export function SystemRail() {
         accent="var(--union)"
         plate="union"
         event={strike}
-        actions={pickActions(actions, ["negotiate", "fund-union"])}
+        actions={pickActions(actions, [
+          "negotiate",
+          "fund-union",
+          "back-to-work",
+        ])}
       >
         <Meter label="Worker wellbeing" value={wellbeing} color="var(--good)" />
       </SystemCard>
@@ -120,23 +124,6 @@ export function SystemRail() {
         }
       />
 
-      <SystemCard
-        icon="workers"
-        name="Workforce"
-        accent="var(--gold)"
-        plate="mines"
-        plateDir="stage"
-        event={machinery}
-        actions={pickActions(actions, ["back-to-work"])}
-      >
-        <Meter
-          label="On the chain"
-          value={chainWorkers}
-          max={Math.max(1, chainTotal)}
-          color="var(--gold)"
-          format={(v) => `${Math.round(v)} / ${chainTotal}`}
-        />
-      </SystemCard>
     </div>
   );
 }

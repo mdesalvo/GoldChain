@@ -243,7 +243,7 @@ export const ACTIONS = [
 
   {
     id: "back-to-work",
-    label: "Back to the chain",
+    label: "To the chain",
     system: "chain",
     cost: 3,
     cooldown: 15,

@@ -1,6 +1,8 @@
 # GoldChain
 
-A satirical 3D tycoon/idle game. A society of monkeys exists for a
+*(working title — the game will probably ship as **Divine Flow**.)*
+
+A satirical tycoon/idle game. A society of monkeys exists for a
 single purpose: deliver exactly **1 coin per second** to a deified,
 astronomically-paid celebrity. The player's job is to keep that
 number steady against strikes, breakdowns, mafia sabotage, political
@@ -23,10 +25,10 @@ Miners -> Haulers -> Smelters -> Goldsmiths -> Drivers
 ## Architecture
 
 ```
-UI Layer        React + Zustand        HUD, deity mood, notifications
-Render Layer    React Three Fiber      3D scene, instanced monkey meshes
+UI Layer        React + CSS            panels over a painted set, no animation
+Render Layer    concept art + R3F      painted backdrop; live 3D behind a toggle
 Simulation      Miniplex (ECS)         fixed-tick (15Hz) pipeline + monkey FSM
-Events Engine   (planned: XState)      strikes, breakdowns, mafia raids, laws
+Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
 ```
 
 The simulation runs on a **fixed timestep accumulator**, decoupled
@@ -36,7 +38,9 @@ device performance (see `src/simulation/useGameLoop.js`).
 ## Stack
 
 - [Vite](https://vitejs.dev/) — build tooling
-- [React](https://react.dev/) + [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) — rendering
+- [React](https://react.dev/) — the UI, which is most of the game
+- [XState](https://stately.ai/docs) — one state machine per disruption
+- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) — the live 3D view
 - [Miniplex](https://github.com/hmans/miniplex) — ECS for the monkey population
 - [Zustand](https://github.com/pmndrs/zustand) — global game state
 
@@ -47,35 +51,78 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL. You should see a green field populated
-with color-coded capsule monkeys (placeholder art) and an HUD in the
-top-left tracking coins delivered, current rate vs. target, and the
-Deity's mood.
+Open the printed local URL. The screen is the society in cross-section —
+the Deity enthroned above, the chain grinding below — with the panels of
+a management game laid over it: the flow you are keeping alive, the five
+institutions you can spend on, the work units along the bottom, and the
+reserve the tribute is actually paid from.
+
+Add `?skip=180` to fast-forward 180 simulated seconds before the first
+paint. A fresh game shows every meter at its starting value, which is the
+one state that tells you nothing.
+
+Nothing on screen animates. Everything that moves is a number being
+written into a panel.
+
+### Watching a run without a browser
+
+```bash
+npm run sim -- 20 42 invest     # 20 minutes, seed 42, an investing player
+```
+
+The harness drives the real simulation and prints a timeline of every
+disruption. Strategies are `watch`, `invest` and `exploit`; comparing them
+is how the central design claim gets tested — that neglecting the
+societal layer maximises short-term flow and makes the society fragile.
+
+### Regenerating the art
+
+```bash
+python3 scripts/extract-art.py
+```
+
+Everything in `public/art/` is cut from the concept image in
+`art-source/`, including the backdrop, which is the whole concept with the
+regions its own UI occupied painted back out. Never edit the output by
+hand. Requires Pillow; uses `optipng` and `jpegoptim` if present.
 
 ## Project status
 
-Early scaffold. Currently implemented:
+Playable loop, no progression. Implemented:
 
-- [x] Project structure (render / simulation / state layers)
-- [x] ECS world with all pipeline + societal roles
-- [x] Fixed-tick simulation loop with a basic bucket-chain economy model
-- [x] Instanced 3D rendering of the monkey population
-- [x] Minimal HUD (coins delivered, rate, streak, deity mood)
+- [x] ECS world with every pipeline and societal role
+- [x] Fixed-tick simulation, deterministic and seeded, runnable headless
+- [x] Bucket-chain economy with finite buffers, backpressure, and a reserve
+      the Deity is paid from at exactly the demanded rate
+- [x] Events engine — one XState machine per disruption type
+- [x] Medical system, societal drift, deity mood and wrath, quota ratchet
+- [x] Player actions, all paid for out of the same reserve the Deity is
+- [x] Full UI over the painted set, built from the concept art
+- [x] Headless balance harness with scripted strategies
 
 Not yet implemented:
 
-- [ ] Events engine (strikes, breakdowns, mafia raids, legislation) — planned with XState
-- [ ] Real monkey models/animations (currently colored capsules)
-- [ ] Pathfinding / movement between pipeline stages
-- [ ] Deity reaction system (visual/audio feedback tied to mood)
+- [ ] Progression: the Build, Workers, Research, Decrees, Stats and
+      Achievements tabs are visible and disabled
+- [ ] Concurrent laws — the legislature passes one at a time
 - [ ] Save/load, difficulty tuning, win/loss conditions
+- [ ] Real monkey models for the 3D view (still coloured capsules)
+
+**Known balance gap.** Over forty minutes, doing nothing currently beats
+both investing and exploiting, and ends with the Deity delighted. The
+design tension is in the code but not yet in the numbers. See `CLAUDE.md`.
 
 ## Folder structure
 
 ```
 src/
-  render/          Scene, HUD, and all visual components (R3F)
-  simulation/       ECS world, pipeline economy, fixed-tick game loop
+  ui/               the game screen: panels, rails, strip. All CSS + JS
+  render/           R3F scene for the live 3D view
+  simulation/       ECS world, economy, player actions, fixed-tick loop
+  events/           XState machines per disruption + the engine over them
   state/            Zustand global store
-  events/           (planned) event engine for disruptions
+scripts/
+  extract-art.py    cuts every asset out of the concept image
+  simulate.mjs      headless balance harness
+art-source/         the concept still and clip. Not served
 ```

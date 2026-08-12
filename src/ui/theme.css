@@ -45,6 +45,10 @@
 
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
 
+  /* Nothing below 11px. The first pass at this UI ran on 8-10px labels and
+     they were, correctly, called illegible: at that size a letter-spaced
+     uppercase label is texture, not text. */
+
   font-synthesis-weight: none;
 }
 
@@ -66,44 +70,105 @@ button {
 
 /* ---------------------------------------------------------------- shell */
 
+/* The set is the window; everything else is layered over it.
+ *
+ * This grid only *positions* panels — the middle cell is deliberately
+ * empty so the painting shows through, and the shell itself is
+ * pointer-transparent so the empty space doesn't swallow clicks. Panel
+ * placement mirrors the concept: title and flow top-left, systems down the
+ * left, clock and speed top-centre, the alert box top-right, the work
+ * units in a strip along the bottom, tabs beneath.
+ *
+ * The concept's own UI footprints are filled flat in the backdrop, so our
+ * panels land on top of where theirs were and nothing of theirs shows.
+ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.backdrop__art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(1.06) contrast(1.04);
+  transition: filter 700ms ease;
+}
+
+/* The set drains of colour when the tribute fails. A state change, not a
+   loop: it only happens when something has actually gone wrong. */
+.backdrop--stalled .backdrop__art {
+  filter: saturate(0.4) contrast(0.95) brightness(0.72);
+}
+
+.backdrop__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(34% 26% at 50% 14%, rgba(255, 216, 130, 0.14), transparent 70%),
+    radial-gradient(125% 115% at 50% 44%, transparent 46%, rgba(0, 0, 0, 0.8) 100%);
+}
+
 .shell {
   position: fixed;
   inset: 0;
+  z-index: 1;
   display: grid;
-  grid-template-columns: 268px minmax(0, 1fr) 296px;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  /* The rails overlay the painting rather than taking width from it — the
+     backdrop is drawn `cover` across the whole window — so their width
+     costs nothing in artwork and is set purely by what the text needs. */
+  grid-template-columns: 274px minmax(0, 1fr) 320px;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   grid-template-areas:
-    "topbar topbar topbar"
-    "rail   stage  alerts"
-    "tabs   tabs   tabs";
+    "brand clock alert"
+    "rail  .     alert"
+    "rail  strip strip"
+    "tabs  tabs  tabs";
   gap: var(--gap);
   padding: var(--gap);
-  background:
-    radial-gradient(120% 90% at 50% 0%, #1a1410 0%, var(--ink) 70%);
+  pointer-events: none;
 }
 
-.shell__topbar { grid-area: topbar; }
-.shell__rail   { grid-area: rail; overflow-y: auto; }
-.shell__stage  { grid-area: stage; min-width: 0; min-height: 0; }
-.shell__alerts { grid-area: alerts; overflow-y: auto; }
-.shell__tabs   { grid-area: tabs; }
+.shell > * {
+  pointer-events: auto;
+  min-width: 0;
+}
+
+.shell__brand { grid-area: brand; }
+.shell__clock { grid-area: clock; justify-self: end; align-self: start; }
+.shell__alert { grid-area: alert; overflow-y: auto; }
+.shell__rail  { grid-area: rail; overflow-y: auto; }
+.shell__strip { grid-area: strip; align-self: end; }
+.shell__tabs  { grid-area: tabs; }
 
 /* Thin, unobtrusive scrollbars — the rails scroll on short screens. */
 .shell__rail::-webkit-scrollbar,
-.shell__alerts::-webkit-scrollbar { width: 6px; }
+.shell__alert::-webkit-scrollbar { width: 6px; }
 .shell__rail::-webkit-scrollbar-thumb,
-.shell__alerts::-webkit-scrollbar-thumb {
+.shell__alert::-webkit-scrollbar-thumb {
   background: var(--gold-dim);
   border-radius: 3px;
 }
 
 /* ---------------------------------------------------------------- panel */
 
+/* Opaque enough to read against the painting, with a carved inner
+   highlight so the panels feel set into the scene rather than pasted on. */
 .panel {
-  background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+  background: linear-gradient(
+    180deg,
+    rgba(30, 26, 22, 0.95),
+    rgba(16, 13, 11, 0.95)
+  );
   border: 1px solid var(--edge);
   border-radius: var(--r);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 224, 150, 0.08);
+  backdrop-filter: blur(6px);
 }
 
 .panel--flush { padding: 10px 12px; }
@@ -112,7 +177,7 @@ button {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 1.4px;
   text-transform: uppercase;
@@ -129,54 +194,59 @@ button {
 .icon--sm { width: 16px; height: 16px; }
 .icon--lg { width: 30px; height: 30px; }
 
-/* --------------------------------------------------------------- topbar */
+/* ------------------------------------------------------- brand and flow */
 
-.topbar {
+.brandpanel {
   display: flex;
-  align-items: stretch;
-  gap: var(--gap);
+  flex-direction: column;
+  gap: 8px;
 }
 
-.brand {
+.brandpanel__head {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 16px 8px 12px;
+  padding: 7px 12px;
 }
 
 .brand__name {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.5px;
   line-height: 1.1;
 }
 
 .brand__sub {
-  font-size: 10.5px;
+  font-size: 13px;
   color: var(--text-soft);
 }
 
-/* The one number the whole game is about. */
-.flow {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 6px 20px;
+.brandpanel__flow { padding: 8px 14px 10px; }
+
+.flowline + .flowline {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--edge-soft);
 }
 
-.flow__block { text-align: center; }
+.flowline--target {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 
 .flow__label {
-  font-size: 9.5px;
+  font-size: 12px;
   letter-spacing: 1.4px;
   text-transform: uppercase;
   color: var(--text-faint);
 }
 
 .flow__value {
-  font-size: 34px;
+  font-size: 40px;
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
@@ -184,24 +254,32 @@ button {
 .flow__value--off { color: var(--bad); }
 
 .flow__unit {
-  font-size: 9.5px;
+  font-size: 12px;
   letter-spacing: 1.2px;
   color: var(--text-faint);
 }
 
 .flow__target {
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 700;
+  line-height: 1.05;
   color: var(--gold-bright);
   font-variant-numeric: tabular-nums;
 }
 
-.flow__verdict {
+.flow__miss {
   font-size: 26px;
   line-height: 1;
+  color: var(--bad);
 }
 
-.topbar__spacer { flex: 1 1 auto; }
+/* --------------------------------------------------------- clock, speed */
+
+.clockbar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--gap);
+}
 
 .clock {
   display: flex;
@@ -211,14 +289,19 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.clock__day { font-size: 15px; font-weight: 700; }
-.clock__time { font-size: 13px; color: var(--text-soft); }
+.clock__day { font-size: 18px; font-weight: 700; }
+.clock__time { font-size: 15px; color: var(--text-soft); }
 
-.timectl { display: flex; align-items: center; gap: 5px; padding: 0 8px; }
+.timectl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+}
 
 .tbtn {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   font-size: 13px;
@@ -230,10 +313,26 @@ button {
 }
 
 .tbtn:hover { border-color: var(--edge); }
+
 .tbtn--on {
-  background: var(--gold-wash);
-  border-color: var(--gold);
-  color: var(--gold-bright);
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  border-color: var(--gold-bright);
+  color: var(--ink);
+}
+
+/* Drawn rather than cut: the concept's pause glyph is dark-on-gold, so it
+   keys out to nothing against its own button. */
+.tbtn__pause {
+  width: 12px;
+  height: 14px;
+  border-left: 4px solid currentColor;
+  border-right: 4px solid currentColor;
+}
+
+.tbtn__x4 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 /* ----------------------------------------------------------- system card */
@@ -241,8 +340,8 @@ button {
 .sys {
   position: relative;
   overflow: hidden;
-  margin-bottom: 8px;
-  padding: 7px 10px;
+  margin-bottom: 6px;
+  padding: 6px 10px 8px;
   border-left: 3px solid var(--accent, var(--gold-dim));
 }
 
@@ -271,8 +370,9 @@ button {
   pointer-events: none;
   background: linear-gradient(
     100deg,
-    rgba(8, 7, 10, 0.55) 0%,
-    transparent 62%
+    rgba(8, 7, 10, 0.82) 0%,
+    rgba(8, 7, 10, 0.5) 55%,
+    rgba(8, 7, 10, 0.2) 100%
   );
 }
 
@@ -300,11 +400,11 @@ button {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
 }
 
 .sys__name {
-  font-size: 12.5px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -317,7 +417,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 9.5px;
+  font-size: 11.5px;
   letter-spacing: 0.6px;
   padding: 1px 6px;
   border-radius: 3px;
@@ -330,28 +430,35 @@ button {
   color: #ffb0a4;
 }
 
+/* Clamped rather than given a minimum: the cards have to add up to less
+   than the window's height, and two lines is enough for any of these
+   messages. */
 .sys__detail {
-  font-size: 10.5px;
+  font-size: 13px;
   color: var(--text-soft);
-  line-height: 1.35;
-  min-height: 2.7em;
+  line-height: 1.32;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.64em;
 }
 
 .sys__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 7px;
+  margin-top: 5px;
 }
 
 /* ---------------------------------------------------------------- meter */
 
-.meter { margin: 4px 0; }
+.meter { margin: 3px 0; }
 
 .meter__row {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-faint);
   margin-bottom: 3px;
 }
@@ -379,8 +486,8 @@ button {
 /* --------------------------------------------------------------- action */
 
 .action {
-  padding: 4px 9px;
-  font-size: 10.5px;
+  padding: 4px 7px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -457,7 +564,7 @@ button {
   gap: 5px;
   padding: 3px 8px;
   border-radius: 20px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   white-space: nowrap;
@@ -511,13 +618,13 @@ button {
 }
 
 .deity__label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   color: var(--text-faint);
 }
 
-.deity__value { font-size: 15px; font-weight: 700; }
+.deity__value { font-size: 18px; font-weight: 700; }
 
 .stage__toggle {
   position: absolute;
@@ -527,19 +634,11 @@ button {
 
 /* --------------------------------------------------------- stage strip */
 
-/* Floated into the letterbox band below the plate rather than given its
-   own row. The plate is centred in the pane, so that band is dead space
-   anyway; putting the strip there costs nothing and keeps the art
-   unobstructed. The translucent card backgrounds mean that on a short
-   window, where the band shrinks, overlapping the art degrades into a
-   readable overlay instead of a collision. */
+/* The work units, along the bottom of the set. */
 .strip {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
   display: flex;
-  gap: 5px;
+  gap: 6px;
+  align-items: stretch;
 }
 
 /* The art in these is 34px tall, so it can only ever read as a texture.
@@ -617,7 +716,7 @@ button {
 .stagecard__body { padding: 4px 7px 6px; }
 
 .stagecard__name {
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -630,13 +729,13 @@ button {
 .stagecard__stat {
   display: flex;
   justify-content: space-between;
-  font-size: 9.5px;
+  font-size: 11.5px;
   color: var(--text-soft);
   font-variant-numeric: tabular-nums;
 }
 
 .stagecard__rate {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--gold-bright);
   font-variant-numeric: tabular-nums;
@@ -656,26 +755,69 @@ button {
   background: var(--gold);
 }
 
+/* Wider than a stage card, and no illustration: it is the end of the
+   chain, not a stage of it. */
+.stagecard--reserve {
+  flex: 0 0 190px;
+  border-color: var(--edge);
+}
+
+.stagecard--reserve .stagecard__name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+
+.reserve__value {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.reserve__cover {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.stagecard--reserve .sys__actions { margin-top: 6px; }
+
 /* --------------------------------------------------------------- alerts */
 
+/* The concept's red box. Present in both states so its position is
+   learned before it is needed. */
 .alert {
-  padding: 10px 12px;
+  padding: 11px 14px;
   margin-bottom: var(--gap);
-  border-radius: var(--r);
-  border: 1px solid var(--bad);
-  background: linear-gradient(180deg, rgba(224, 90, 74, 0.16), rgba(20, 17, 15, 0.9));
+  border-color: var(--bad);
+  background: linear-gradient(
+    180deg,
+    rgba(150, 40, 30, 0.5),
+    rgba(20, 14, 12, 0.95)
+  );
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 rgba(255, 180, 160, 0.14),
+    inset 0 0 30px rgba(190, 50, 36, 0.22);
 }
 
 .alert--calm {
   border-color: var(--edge);
-  background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+  background: linear-gradient(
+    180deg,
+    rgba(30, 26, 22, 0.95),
+    rgba(16, 13, 11, 0.95)
+  );
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 224, 150, 0.08);
 }
 
 .alert__head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
+  gap: 7px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -685,7 +827,7 @@ button {
 .alert--calm .alert__head { color: var(--good); }
 
 .alert__body {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-soft);
   margin-top: 4px;
   line-height: 1.45;
@@ -704,22 +846,42 @@ button {
 }
 
 .reserve__value {
-  font-size: 27px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-.reserve__cover { font-size: 10px; color: var(--text-faint); }
+.reserve__cover { font-size: 12px; color: var(--text-faint); }
 
 .feed { display: flex; flex-direction: column; gap: 5px; }
+
+/* Pinned over the top-left of the plate: dark temple architecture, no
+   hotspot above a third of the way down on that side. Overlaying the art
+   is how the concept lays its own panels out, and it is the only place a
+   feed can go once the right rail is gone without taking width off the
+   picture. */
+.feed--overlay {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 322px;
+  max-width: 42%;
+  z-index: 2;
+}
+
+.feed--overlay .feed__item {
+  border-radius: 4px;
+  background: rgba(8, 7, 10, 0.82);
+  backdrop-filter: blur(3px);
+}
 
 .feed__item {
   display: flex;
   gap: 7px;
   align-items: baseline;
   padding: 6px 9px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.35;
   border-radius: 0 5px 5px 0;
   border-left: 3px solid var(--tone, var(--gold));
@@ -744,7 +906,7 @@ button {
   align-items: center;
   gap: 6px;
   padding: 6px 13px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.9px;
   text-transform: uppercase;
@@ -770,7 +932,7 @@ button {
 }
 
 .tab__soon {
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   padding: 1px 4px;
   border-radius: 3px;
@@ -785,7 +947,7 @@ button {
   align-items: center;
   gap: 7px;
   padding: 4px 12px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   border-left: 1px solid var(--edge-soft);
