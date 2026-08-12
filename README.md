@@ -1,12 +1,16 @@
 # GoldChain
 
-A satirical tycoon/idle game. A society of monkeys exists for a
-single purpose: deliver exactly **1 coin per second** to a deified,
-astronomically-paid celebrity. The player's job is to keep that
-number steady against strikes, breakdowns, mafia sabotage, political
-upheaval, and the Deity's inevitable wrath when the flow stops.
+Welcome to a society built for one single purpose.
+Deliver exactly one coin every second to your Deity.
+The Deity is an astronomically-paid, deified mega-celebrity.
+Your sole job is to keep that counter steady.
+Quash violent monkey strikes before they halt production.
+Repair catastrophic infrastructure breakdowns in real-time.
+Outsmart brutal mafia sabotage and sudden political upheavals.
+Automate the ultimate, satirical capitalist simulator.
+**Never let the flow stop, or face divine wrath.**
 
-<img src="https://raw.githubusercontent.com/mdesalvo/GoldChain/master/art-source/GoldChain.jpg" alt="The concept art the whole UI is built from" width="100%" />
+<img src="https://raw.githubusercontent.com/mdesalvo/GoldChain/master/art-source/GoldChain.jpg" width="100%" />
 
 ## Production chain
 
@@ -24,10 +28,10 @@ Miners -> Transporters -> Smelters -> Minters -> Payer -> [The Deity]
 ## Architecture
 
 ```
-UI Layer        React + CSS            panels over a painted set, no animation
-Render Layer    concept art + R3F      painted backdrop; live 3D behind a toggle
-Simulation      Miniplex (ECS)         fixed-tick (15Hz) pipeline + monkey FSM
-Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
+UI Layer        React + CSS         panels over a painted set, no animation
+Render Layer    concept art         painted backdrop
+Simulation      Miniplex (ECS)      fixed-tick (15Hz) pipeline + monkey FSM
+Events Engine   XState (v5)         strikes, breakdowns, mafia raids, laws
 ```
 
 The simulation runs on a **fixed timestep accumulator**, decoupled
@@ -39,7 +43,6 @@ device performance (see `src/simulation/useGameLoop.js`).
 - [Vite](https://vitejs.dev/) — build tooling
 - [React](https://react.dev/) — the UI, which is most of the game
 - [XState](https://stately.ai/docs) — one state machine per disruption
-- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) — the live 3D view
 - [Miniplex](https://github.com/hmans/miniplex) — ECS for the monkey population
 - [Zustand](https://github.com/pmndrs/zustand) — global game state
 
@@ -50,7 +53,7 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL. The screen is the society in cross-section —
+Open the printed URL. The screen is the society in cross-section —
 the Deity enthroned above, the chain grinding below — with the panels of
 a management game laid over it: the flow you are keeping alive, the four
 institutions you can spend on, the work units along the bottom, and the
