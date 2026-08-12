@@ -15,13 +15,13 @@ The Deity is an astronomically-paid, deified mega-celebrity. Your sole job is to
 ## ⚠️ THE GOLDEN RULE
 > **Never let the flow stop, or face divine wrath.**"
 
-## Production chain
+# Production chain
 
 ```
 Miners -> Transporters -> Smelters -> Minters -> Payer -> [The Deity]
 ```
 
-## Societal layer
+# Societal layer
 
 - **Unionizers** — fight for worker rights; ignoring them too long triggers strikes.
 - **Politicians** — legislate, changing game rules at runtime (taxes, safety regs).
