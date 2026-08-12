@@ -28,19 +28,6 @@ Miners -> Transporters -> Smelters -> Minters -> Payer -> [The Deity]
 - **Doctors / Nurses** — treat injuries from mine collapses, furnace accidents, etc.
 - **Police vs. Mafiosi** — security layer; weak policing lets corruption siphon gold.
 
-## Architecture
-
-```
-UI Layer        React + CSS         panels over a painted set, no animation
-Render Layer    concept art         painted backdrop
-Simulation      Miniplex (ECS)      fixed-tick (15Hz) pipeline + monkey FSM
-Events Engine   XState (v5)         strikes, breakdowns, mafia raids, laws
-```
-
-The simulation runs on a **fixed timestep accumulator**, decoupled
-from render framerate, so the game stays deterministic regardless of
-device performance (see `src/simulation/useGameLoop.js`).
-
 ## Stack
 
 - [Vite](https://vitejs.dev/) — build tooling
