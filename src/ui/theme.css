@@ -246,22 +246,55 @@ button {
   border-left: 3px solid var(--accent, var(--gold-dim));
 }
 
-/* The plate cut from the concept art, sunk behind the numbers so it
-   reads as texture rather than as a picture competing with them. */
+/* The plate cut from the concept art, sunk behind the numbers so it reads
+   as texture rather than as a picture competing with them. The mask keeps
+   it clear of the left side where the label and the meter live, and the
+   accent wash over the top ties the card to its system's colour — so the
+   card is identifiable at a glance without the art having to be legible,
+   which at this size it never will be. */
 .sys__plate {
   position: absolute;
   inset: 0;
   background-image: var(--plate);
   background-size: cover;
   background-position: center;
-  opacity: 0.17;
-  filter: saturate(0.8);
-  mask-image: linear-gradient(100deg, transparent 28%, #000 100%);
-  -webkit-mask-image: linear-gradient(100deg, transparent 28%, #000 100%);
+  opacity: 0.22;
+  filter: saturate(0.9) contrast(1.05);
+  mask-image: linear-gradient(100deg, transparent 26%, #000 105%);
+  -webkit-mask-image: linear-gradient(100deg, transparent 26%, #000 105%);
   pointer-events: none;
 }
 
-.sys > *:not(.sys__plate) { position: relative; }
+.sys__wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    rgba(8, 7, 10, 0.55) 0%,
+    transparent 62%
+  );
+}
+
+.sys {
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 224, 150, 0.07);
+}
+
+.sys:hover .sys__plate {
+  opacity: 0.32;
+}
+
+/* A system in trouble lights its own card in its own colour. */
+.sys--hot {
+  border-color: var(--accent, var(--gold));
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 rgba(255, 224, 150, 0.1),
+    inset 0 0 26px color-mix(in srgb, var(--accent, #e8b743) 22%, transparent);
+}
+
+.sys > *:not(.sys__plate):not(.sys__wash) { position: relative; }
 
 .sys__head {
   display: flex;
@@ -377,16 +410,25 @@ button {
 
 /* -------------------------------------------------------------- viewport */
 
+/* Nothing in the viewport moves any more, so the framing has to do the
+   work motion was doing: a warm bloom off the idol's halo at the top, a
+   carved gold edge, and a deep inner shadow so the set reads as lit from
+   within rather than as a JPEG in a div. */
 .stage {
   position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
   border-radius: var(--r);
-  border: 1px solid var(--edge);
+  border: 1px solid var(--gold-dim);
   overflow: hidden;
-  background: #0b0a08;
-  box-shadow: var(--shadow), inset 0 0 60px rgba(0, 0, 0, 0.6);
+  background:
+    radial-gradient(90% 55% at 50% 0%, rgba(232, 183, 67, 0.16), transparent 70%),
+    #0b0a08;
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 rgba(255, 224, 150, 0.14),
+    inset 0 0 70px rgba(0, 0, 0, 0.7);
 }
 
 /* The painted set is letterboxed at its own aspect ratio rather than
@@ -403,73 +445,13 @@ button {
   overflow: hidden;
 }
 
-/* The plate is wider than the pane is tall, so there is always a band
-   above and below it. Rather than leave dead black there, the top band
-   becomes a marquee: what you are looking at, and what is being demanded
-   of it right now. */
-.stage__marquee {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 9px 14px;
-  font-size: 10.5px;
-  letter-spacing: 1.6px;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.stage__marquee-demand {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-  letter-spacing: 1px;
-  color: var(--gold-bright);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Width-driven: the plate is 1.82:1 and the pane is usually taller than
-   that, so sizing by width keeps the aspect exact and letterboxes the
-   leftover height. Sizing by height instead lets `max-width` clamp the
-   width while the height stays put, which silently stretches the art. */
-.stage__set {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 843 / 463;
-  max-height: 100%;
-}
-
-/* Shared by the still <img> and the animated <video>, so switching
-   between them cannot shift the framing the hotspots depend on. */
-.stage__plate {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  display: block;
-}
-
-/* Vignette so the UI edges melt into the art instead of butting against it. */
-.stage__vignette {
-  position: absolute;
-  inset: 0;
-  border-radius: 3px;
-  pointer-events: none;
-  background:
-    radial-gradient(120% 100% at 50% 40%, transparent 45%, rgba(0,0,0,0.72) 100%);
-}
-
 /* Hot spots pinned over the regions of the painted set they refer to, so
    a strike lights up the picket line and a raid lights up the police. */
 .hotspot {
   position: absolute;
   transform: translate(-50%, -50%);
+  /* Anchors near the edge of the plate would otherwise centre their label
+     half-way off it. */
   display: flex;
   align-items: center;
   gap: 5px;
@@ -485,6 +467,9 @@ button {
   box-shadow: 0 0 16px rgba(0, 0, 0, 0.6);
   animation: pulse 1.7s ease-in-out infinite;
 }
+
+.hotspot--left { transform: translate(0, -50%); }
+.hotspot--right { transform: translate(-100%, -50%); }
 
 @keyframes pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(232, 183, 67, 0.35); }
@@ -510,11 +495,19 @@ button {
 
 .deity picture { flex: 0 0 auto; }
 
+/* Framed like a reliquary and lit in the colour of the Deity's current
+   mood, so a glance at the portrait tells you where you stand before you
+   read a single number. */
 .deity img {
-  width: 54px;
+  width: 60px;
   border-radius: 5px;
-  border: 1px solid var(--edge);
+  border: 1px solid var(--mood, var(--gold));
   display: block;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 16px color-mix(in srgb, var(--mood, #e8b743) 45%, transparent);
+  transition: border-color 600ms ease, box-shadow 600ms ease,
+    filter 600ms ease;
 }
 
 .deity__label {
@@ -549,6 +542,10 @@ button {
   gap: 5px;
 }
 
+/* The art in these is 34px tall, so it can only ever read as a texture.
+   Given that, the job of the CSS is to make it *legible* as one: a gold
+   hairline to seat it, a scrim under the text, and a lift on hover for
+   the player who wants a closer look. */
 .stagecard {
   flex: 1 1 0;
   min-width: 0;
@@ -557,45 +554,64 @@ button {
   background: rgba(8, 7, 10, 0.82);
   overflow: hidden;
   backdrop-filter: blur(3px);
+  box-shadow: inset 0 1px 0 rgba(255, 224, 150, 0.1);
+  transition: transform 140ms ease, border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
-.stagecard--jam { border-color: var(--warn); }
-.stagecard--dead { border-color: var(--bad); }
+.stagecard:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold-dim);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 224, 150, 0.18),
+    0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+.stagecard:hover .stagecard__art {
+  filter: saturate(1.15) brightness(1.12);
+}
+
+.stagecard--jam {
+  border-color: var(--warn);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 224, 150, 0.14),
+    inset 0 0 18px rgba(232, 161, 63, 0.16);
+}
+
+/* A stopped stage is the thing a player most needs to spot from across
+   the room, so it gets colour, a wash over the art, and a border. */
+.stagecard--dead {
+  border-color: var(--bad);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 160, 140, 0.14),
+    inset 0 0 22px rgba(208, 87, 74, 0.28);
+}
+
+.stagecard--dead .stagecard__art {
+  filter: saturate(0.25) brightness(0.62);
+}
 
 .stagecard__art {
+  position: relative;
   height: 34px;
   background-image: var(--plate);
   background-size: cover;
   background-position: center;
-  opacity: 0.85;
+  opacity: 0.92;
+  transition: filter 250ms ease;
 }
 
-/* The conveyor that carries the tribute up to the Deity, overlaid on the
-   still plate at the belt's own position. Its playback rate is driven by
-   the actual coin rate, so the belt slows as the flow does and stops dead
-   when the tribute stops — the one animation in the UI that is telling
-   you something rather than just moving. */
-.stage__belt {
+/* Scrim, so the stage name never has to compete with whatever the
+   illustration happens to be bright at. */
+.stagecard__art::after {
+  content: "";
   position: absolute;
-  left: 51.9%;
-  top: 41%;
-  width: 3.5%;
-  height: 59%;
-  object-fit: fill;
-  pointer-events: none;
-}
-
-/* Anyone who has asked for less motion gets the stills. Every animated
-   asset has a same-named .jpg for exactly this. */
-@media (prefers-reduced-motion: reduce) {
-  .sys__plate,
-  .stagecard__art {
-    background-image: var(--plate-still);
-  }
-
-  .stage__belt {
-    display: none;
-  }
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(8, 7, 10, 0.15) 0%,
+    rgba(8, 7, 10, 0.62) 100%
+  );
 }
 
 .stagecard__body { padding: 4px 7px 6px; }

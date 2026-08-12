@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useGameStore } from "../state/useGameStore.js";
 import { EVENT_TYPES } from "../events/eventTypes.js";
 import { ROLES } from "../simulation/world.js";
-import { Icon } from "./parts.jsx";
+import { PLATE_ASPECT, REGIONS } from "./artRegions.js";
 import { Scene } from "../render/Scene.jsx";
 
 /**
@@ -20,17 +20,6 @@ import { Scene } from "../render/Scene.jsx";
  * there is real art to replace the placeholders with. Neither view can
  * affect the simulation; both only read it.
  */
-
-// Where each region sits on the backdrop, in percentages of the plate.
-// Derived from the crop box in `public/art/diorama.jpg`.
-const REGIONS = {
-  union: { left: "13%", top: "26%" },
-  politicians: { left: "77%", top: "27%" },
-  hospital: { left: "73%", top: "51%" },
-  police: { left: "90%", top: "73%" },
-  mines: { left: "15%", top: "48%" },
-  smelter: { left: "14%", top: "75%" },
-};
 
 // Which region a broken stage should light up.
 const STAGE_REGION = {
@@ -52,91 +41,72 @@ const STAGE_ART = {
   [ROLES.PAYER]: "delivery",
 };
 
-// Cycled by the button in the corner. The still is the default on
-// purpose: the animated plate is prettier but the generative pass garbled
-// every sign in the set and dropped the Deity's salary placard, so the
-// still is the more *readable* backdrop. Motion is never the default for
-// a second reason: a permanently moving background is a poor thing to
-// force on anyone who would rather it held still.
-const MODES = ["plate", "motion", "scene"];
-
-const MODE_LABEL = {
-  plate: { next: "Play the set", badge: "2D" },
-  motion: { next: "Show the live simulation", badge: "LIVE" },
-  scene: { next: "Back to the painted set", badge: "3D" },
-};
-
 export function Viewport() {
-  const [mode, setMode] = useState("plate");
-  const targetRate = useGameStore((s) => s.targetRate);
+  const [showScene, setShowScene] = useState(false);
   const events = useGameStore((s) => s.activeEvents);
   const stages = useGameStore((s) => s.stages);
   const blockedRoles = useGameStore((s) => s.blockedRoles);
   const bottleneck = useGameStore((s) => s.bottleneck);
   const injured = useGameStore((s) => s.injuredCount);
+  const flowMet = useGameStore((s) => s.flowMet);
 
   const blocked = new Set(blockedRoles);
 
-  return (
-    <div className="stage">
-      <div className="stage__frame">
-        <div className="stage__marquee">
-          The society, in cross-section
-          <span className="stage__marquee-demand">
-            <Icon name="coin" size="sm" alt="" />
-            {targetRate.toFixed(3)} demanded / sec
-          </span>
-        </div>
+  // The set drains of colour when the *tribute* fails, not when a stage
+  // stops. Stopped stages are marked on the stage cards, where they
+  // belong; draining the whole set for them contradicted the panel next
+  // to it still reading FLOW NOMINAL, because the reserve was covering.
+  // This way the picture and the alert agree. Published at 5Hz, so it
+  // costs no extra re-renders.
+  const stalled = !flowMet;
 
-        {mode === "scene" ? (
+  return (
+    <div className={`stage${stalled ? " stage--stalled" : ""}`}>
+      <div className="stage__frame">
+
+        {showScene ? (
           <Scene />
         ) : (
-          <div className="stage__set">
-            {mode === "motion" ? (
-              /* Same crop box as the still, so the hotspots below land on
-                 the same rooms in either mode. */
-              <video
-                className="stage__plate"
-                src="/art/diorama.webm"
-                poster="/art/diorama.jpg"
-                autoPlay
-                muted
-                loop
-                playsInline
-              />
-            ) : (
-              <img
-                className="stage__plate"
-                src="/art/diorama.jpg"
-                alt="The society, in cross-section"
-                draggable={false}
-              />
-            )}
-            {mode === "plate" && <ConveyorBelt />}
+          <div className="stage__set" style={{ aspectRatio: PLATE_ASPECT }}>
+            <img
+              className="stage__plate"
+              src="/art/diorama.jpg"
+              alt="The society, in cross-section"
+              draggable={false}
+            />
             <div className="stage__vignette" />
-            {hotspots(events, injured).map((spot) => (
+            {hotspots(events, injured).map((spot) => {
+              const region = REGIONS[spot.region];
+              return (
               <div
                 key={spot.key}
-                className="hotspot"
-                style={{ ...REGIONS[spot.region], "--accent": spot.accent }}
+                className={`hotspot hotspot--${region.align}`}
+                style={{
+                  left: region.left,
+                  top: region.top,
+                  "--accent": spot.accent,
+                }}
                 title={spot.detail}
               >
                 <i className="hotspot__dot" />
                 {spot.label}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         <button
           type="button"
           className="tbtn stage__toggle"
-          onClick={() =>
-            setMode((current) => MODES[(MODES.indexOf(current) + 1) % MODES.length])
+          onClick={() => setShowScene((on) => !on)}
+          title={
+            showScene
+              ? "Back to the painted set"
+              : "Show the live 3D simulation instead"
           }
-          title={MODE_LABEL[mode].next}
         >
-          {MODE_LABEL[mode].badge}
+          {showScene ? "2D" : "3D"}
         </button>
       </div>
 
@@ -151,49 +121,6 @@ export function Viewport() {
         ))}
       </div>
     </div>
-  );
-}
-
-/**
- * The conveyor belt, overlaid on the still plate and driven by the actual
- * tribute rate.
- *
- * Playback rate rather than a CSS animation because the belt is real
- * footage, and rather than a fixed loop because a belt that always moves
- * at the same speed while the flow collapses is actively misleading. Kept
- * in its own component so the 15Hz rate updates re-render this and
- * nothing else.
- */
-function ConveyorBelt() {
-  const currentRate = useGameStore((s) => s.currentRate);
-  const targetRate = useGameStore((s) => s.targetRate);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const video = ref.current;
-    if (!video) return;
-
-    const ratio = targetRate > 0 ? currentRate / targetRate : 0;
-    if (ratio < 0.02) {
-      video.pause();
-      return;
-    }
-    // Clamped: below a quarter speed the coins judder, above double they
-    // blur into a stripe.
-    video.playbackRate = Math.max(0.25, Math.min(2, ratio));
-    if (video.paused) video.play().catch(() => {});
-  }, [currentRate, targetRate]);
-
-  return (
-    <video
-      ref={ref}
-      className="stage__belt"
-      src="/art/belt.webm"
-      autoPlay
-      muted
-      loop
-      playsInline
-    />
   );
 }
 
@@ -282,10 +209,7 @@ function StageCard({ stage, blocked, jammed }) {
     >
       <div
         className="stagecard__art"
-        style={{
-          "--plate": `url(/art/stage/${STAGE_ART[stage.role]}.webp)`,
-          "--plate-still": `url(/art/stage/${STAGE_ART[stage.role]}.jpg)`,
-        }}
+        style={{ "--plate": `url(/art/stage/${STAGE_ART[stage.role]}.jpg)` }}
       />
       <div className="stagecard__body">
         <div className="stagecard__name">{stage.role}</div>

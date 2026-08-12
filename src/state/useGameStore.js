@@ -49,6 +49,7 @@ export const useGameStore = create((set, get) => ({
   injuredCount: 0,
   // Coin banked between the chain and the Deity. The tribute is paid
   // out of here, which is why a stoppage upstream is survivable.
+  flowMet: true,
   reserves: 0,
   reserveCapacity: 0,
   // What the player can do right now, with cost/cooldown/affordability

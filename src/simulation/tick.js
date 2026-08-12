@@ -127,6 +127,9 @@ export function publishSnapshot() {
     stages: pipelineSnapshot(),
     bottleneck: lastEngineFrame.bottleneck,
     injuredCount: lastEngineFrame.injuredCount,
+    // Published rather than read live so the viewport can react to the
+    // tribute failing without re-rendering at the 15Hz rate.
+    flowMet: store.currentRate >= store.targetRate - 0.02,
     reserves: treasury.reserves,
     reserveCapacity: treasury.capacity,
     actions: actionSnapshot(store),

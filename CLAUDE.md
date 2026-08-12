@@ -179,64 +179,67 @@ Planned, not yet built:
 
 ## Art
 
-`public/art/` is generated — never edit it by hand. Run:
+`public/art/` and `src/ui/artRegions.js` are generated — never edit either
+by hand. Run:
 
 ```
 python3 scripts/extract-art.py
 ```
 
-That script is the single source of truth for every crop box, and the
-boxes were all picked by eye against the artwork. Sources live in
-`art-source/` (the concept still and a 5.9s animated version of the same
-frame, same resolution, so one set of boxes serves both). They are
-deliberately *not* under `public/`, which is copied verbatim into the
-build and served.
+Sources live in `art-source/`: the concept still, and a 5.9s animated
+version of the same frame kept for reference. They are deliberately *not*
+under `public/`, which is copied verbatim into the build and served.
 
-What comes out: the cross-section backdrop, the Deity portrait,
-per-system plates (picket line, podium, hospital, police station, mafia
-corner), five stage thumbnails, and 19 icons with the background keyed
-to alpha. ~1.5MB total.
+The script is the single source of truth for the crop boxes, all of which
+were picked by eye. It also emits `artRegions.js` — the backdrop's aspect
+ratio and the hotspot anchors as percentages — because the hotspots are
+positioned relative to the backdrop crop, and a crop change that wasn't
+mirrored in the percentages would silently put the strike badge somewhere
+other than the picket line. Anchors are declared in concept pixels; the
+conversion is the script's job, not a human's.
+
+### Cropping the backdrop
+
+Bounded by the concept's own UI, measured off the rendered plate rather
+than off where the panels appear to end — their glows and rounded corners
+reach further than they look. Two boxes were wrong before this one: the
+first started at y=54 and beheaded the Deity at the sunglasses, and the
+second kept fragments of the brand and "Day 451" plates in the corners.
+Check the plate's edges after any change.
 
 ### The centre pane is a painted backdrop, not a rendered scene
 
-Hotspot positions in `Viewport.jsx` are percentages **of the backdrop
-crop**, which is why the plate is letterboxed at its exact aspect ratio
-rather than cropped to fill: cropping silently slides every hotspot off
-its room. Re-cropping the backdrop means recomputing those percentages.
-The animated backdrop uses the identical crop box for the same reason.
+It is letterboxed at its exact aspect ratio rather than cropped to fill,
+because cropping slides the hotspots off their rooms. The R3F scene is
+still the honest view of the simulation — every capsule is a real entity —
+behind the viewport's corner toggle.
 
-The R3F scene is still the honest view of the simulation (every capsule
-is a real entity) and is the third mode of the viewport's corner toggle.
+### Nothing animates
 
-### What animates, and why not everything
+Three rounds of animation were cut from the clip and all three were
+removed after looking at the result:
 
-The clip is a continuous dolly *into* the set, so nothing in it loops on
-its own. Everything animated is either ping-ponged (forwards then
-backwards) or, for the conveyor, cut to its measured period.
+- **System plates and stage thumbnails.** In a 250×110 card at 22%
+  opacity behind text, or a 34px-tall thumbnail, the motion is fast, tiny
+  and illegible. It read as flicker. ~840K of payload for a worse result
+  than the stills.
+- **The full backdrop.** The generative pass garbled every sign in the set
+  (MONKEY WORKERS UNION → "MUNKEY WURKERS UNIUN", POLICE → "POLIOE") and
+  dropped the Deity's salary placard along with the UI. The still is the
+  more readable backdrop even though it doesn't move.
+- **The conveyor, as video overlaid on the still.** Registering the clip
+  against the still over the belt region gives a scale of 1.000 and a 2px
+  offset, so the two are not misaligned: the clip simply *redrew* the
+  belt, its coins and its rails in different places (MAD 22.8 after
+  optimal registration, against 31 unregistered). No transform reconciles
+  two different drawings, and the mismatch shows as a doubled rail.
 
-- **Per-component plates and stage thumbnails animate.** These are the
-  close-ups, which are the good part of the clip.
-- **The conveyor animates at the speed of the actual flow**, and stops
-  when the tribute stops. Its window is 9 frames because that is the
-  belt's measured period — one coin pitch. It is forward-only: a
-  ping-ponged conveyor runs its coins backwards half the time.
-- **The full backdrop is a mode, not the default.** The generative pass
-  garbled every sign in the set (MONKEY WORKERS UNION → "MUNKEY WURKERS
-  UNIUN", POLICE → "POLIOE") and dropped the Deity's salary placard with
-  the UI, so the still is the *more readable* backdrop even though it
-  doesn't move. That objection doesn't apply to the close-ups: at 17%
-  opacity behind text, or 34px tall, garbled signage is invisible.
-
-Every animated asset has a same-named `.jpg` still, used as the
-`prefers-reduced-motion` fallback via the `--plate` / `--plate-still`
-custom properties.
-
-Formats are chosen on measured size, which the script prints. For the
-backdrop: GIF 3945K, WebP 726K, WebM 211K. GIF is 256 colours a frame
-with no useful interframe compression, which on artwork this warm is the
-difference between megabytes and kilobytes — so nothing ships as GIF.
-The GIFs are still written, to `art-source/gif/`, because a README or a
-chat window will animate a GIF and will not animate a WebM.
+Emphasis on the stills is CSS instead: framing, gradients, glows, hover,
+and state colour. The one thing that changes over time is a *state*
+change, not a loop — the set drains of colour when the tribute fails,
+driven by `flowMet` in the 5Hz snapshot so it costs no extra re-renders.
+If motion is ever revisited, the measurements above are the bar it has to
+clear.
 
 ## Working on this repo
 

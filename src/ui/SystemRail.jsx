@@ -156,17 +156,18 @@ function SystemCard({
   const text = detail ?? event?.detail ?? "";
 
   return (
-    <div className="panel sys" style={{ "--accent": accent }}>
+    <div
+      className={`panel sys${hot ? " sys--hot" : ""}`}
+      style={{ "--accent": accent }}
+    >
       {plate && (
-        <div
-          className="sys__plate"
-          style={{
-            // Animated plate, with the still as the reduced-motion
-            // fallback. The CSS picks between them.
-            "--plate": `url(/art/${plateDir}/${plate}.webp)`,
-            "--plate-still": `url(/art/${plateDir}/${plate}.jpg)`,
-          }}
-        />
+        <>
+          <div
+            className="sys__plate"
+            style={{ "--plate": `url(/art/${plateDir}/${plate}.jpg)` }}
+          />
+          <div className="sys__wash" />
+        </>
       )}
 
       <div className="sys__head">
