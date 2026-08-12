@@ -6,6 +6,9 @@ astronomically-paid celebrity. The player's job is to keep that
 number steady against strikes, breakdowns, mafia sabotage, political
 upheaval, and the Deity's inevitable wrath when the flow stops.
 
+<img src="https://github.com/mdesalvo/GoldChain/blob/master/art-source/GoldChain.jpg" alt="GoldChain Logo" width="100%" />
+</a>
+
 ## Production chain
 
 ```
