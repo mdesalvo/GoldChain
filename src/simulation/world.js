@@ -72,6 +72,46 @@ export function spawnMonkey(role, position = [0, 0, 0]) {
 }
 
 /**
+ * Where each role stands on the ground plane.
+ *
+ * Pipeline roles are laid out left-to-right in `PIPELINE_ORDER` so the
+ * scene reads as a chain at a glance; societal roles sit on a back row
+ * because they act on the chain rather than in it. This is a render
+ * convenience only — nothing in the simulation reads positions, so
+ * real pathfinding can replace it without touching the economy.
+ */
+const STAGE_SPACING = 6;
+const SOCIETAL_ROW_Z = -12;
+
+export function stagePosition(role, index = 0, count = 1) {
+  const pipelineIndex = PIPELINE_ORDER.indexOf(role);
+  // Fan the crew of a stage out around its own centre line.
+  const spread = (index - (count - 1) / 2) * 1.6;
+
+  if (pipelineIndex >= 0) {
+    const x =
+      (pipelineIndex - (PIPELINE_ORDER.length - 1) / 2) * STAGE_SPACING;
+    return [x + (index % 2 === 0 ? -0.9 : 0.9), 0, spread];
+  }
+
+  const societal = SOCIETAL_ORDER.indexOf(role);
+  const slot = societal >= 0 ? societal : SOCIETAL_ORDER.length;
+  const x = (slot - (SOCIETAL_ORDER.length - 1) / 2) * STAGE_SPACING;
+  return [x + spread, 0, SOCIETAL_ROW_Z];
+}
+
+// Back-row ordering for the systemic layer (unions, politics,
+// medical, security). Not a chain — order here is purely visual.
+export const SOCIETAL_ORDER = [
+  ROLES.UNIONIZER,
+  ROLES.POLITICIAN,
+  ROLES.DOCTOR,
+  ROLES.NURSE,
+  ROLES.POLICE,
+  ROLES.MAFIOSO,
+];
+
+/**
  * Convenience: seed a minimal starting population covering every
  * pipeline stage plus a small societal layer. Numbers are placeholder
  * and meant to be tuned once the loop is playable.
@@ -96,17 +136,93 @@ export function seedInitialPopulation() {
 
   Object.entries(counts).forEach(([role, count]) => {
     for (let i = 0; i < count; i++) {
-      const x = (Math.random() - 0.5) * 20;
-      const z = (Math.random() - 0.5) * 20;
-      spawnMonkey(role, [x, 0, z]);
+      spawnMonkey(role, stagePosition(role, i, count));
     }
   });
 }
 
+let seeded = false;
+
+/**
+ * Seeds the population exactly once, synchronously.
+ *
+ * Callers must be able to rely on the world being populated *before*
+ * the first render: the render layer builds instanced meshes sized to
+ * the population, and the game loop starts ticking immediately. Doing
+ * this in an effect would let both run once against an empty world.
+ */
+export function ensureSeeded() {
+  if (seeded) return;
+  seeded = true;
+  seedInitialPopulation();
+}
+
+/**
+ * Every monkey. A component-presence archetype, so miniplex keeps it up
+ * to date automatically.
+ */
+export const allMonkeys = world.with("role", "state");
+
+/**
+ * Buckets are cached per role, because `world.with(...).where(...)`
+ * *creates* a derived bucket every time it is called and registers it
+ * with the world forever. Calling it inside the tick — as the systems
+ * do, several times per role per tick — leaks thousands of buckets and
+ * makes every entity change O(buckets). Roles never change after spawn,
+ * so one bucket per role is both correct and cheap.
+ */
+const roleBuckets = new Map();
+
+export function byRole(role) {
+  let bucket = roleBuckets.get(role);
+  if (!bucket) {
+    bucket = world.with("role").where((e) => e.role === role);
+    roleBuckets.set(role, bucket);
+  }
+  return bucket;
+}
+
+/** How many monkeys currently hold a given role. */
+export function countByRole(role) {
+  return byRole(role).size;
+}
+
+/**
+ * Monkeys of a role that can actually do work right now. Injured
+ * monkeys are out of the workforce until the hospital gets to them,
+ * which is what makes an understaffed hospital a real bottleneck
+ * rather than a cosmetic detail.
+ */
+export function ableWorkerCount(role) {
+  let n = 0;
+  for (const e of byRole(role)) {
+    if (e.state !== STATES.INJURED) n++;
+  }
+  return n;
+}
+
+/**
+ * Monkeys currently in a given `STATES` value.
+ *
+ * Deliberately a filter over a presence archetype rather than a
+ * `.where()` bucket: `state` is mutated in place by the simulation, and
+ * miniplex only re-evaluates predicate buckets on an explicit reindex.
+ * A predicate bucket here would silently go stale — which is worse than
+ * a loop over a few hundred entities.
+ */
+export function withState(state) {
+  const found = [];
+  for (const e of allMonkeys) {
+    if (e.state === state) found.push(e);
+  }
+  return found;
+}
+
 // Pre-built queries reused across simulation systems.
 export const queries = {
-  byRole: (role) => world.with("role").where((e) => e.role === role),
-  working: world.with("role", "state").where((e) => e.state === STATES.WORKING),
-  blocked: world.with("role", "state").where((e) => e.state === STATES.BLOCKED),
-  injured: world.with("health").where((e) => e.health < 100),
+  byRole,
+  all: allMonkeys,
+  working: () => withState(STATES.WORKING),
+  blocked: () => withState(STATES.BLOCKED),
+  injured: () => withState(STATES.INJURED),
 };

@@ -1,0 +1,131 @@
+import { useGameStore } from "../state/useGameStore.js";
+import {
+  stepPipeline,
+  stepMonkeyStates,
+  pipelineSnapshot,
+  treasury,
+} from "./pipeline.js";
+import { stepMedical } from "./medical.js";
+import { stepSociety } from "./society.js";
+import { stepDeity, maybeUnleashWrath } from "./deity.js";
+import { eventsEngine } from "../events/eventsEngine.js";
+
+/**
+ * One simulation tick, and the throttled HUD snapshot that goes with it.
+ *
+ * Deliberately free of React: the driver (`useGameLoop`) owns *when*
+ * this runs, this owns *what* happens. That split is what lets the
+ * headless harness in `scripts/simulate.mjs` run thousands of ticks for
+ * balance work without a browser, using the exact same code path the
+ * game does.
+ */
+
+export const TICK_RATE = 15; // Hz — simulation ticks per second
+export const TICK_DT = 1 / TICK_RATE;
+
+export function stepSimulation(dt) {
+  const store = useGameStore.getState();
+
+  // 1. Events first: they decide what is blocked, taxed or on fire this
+  //    tick. Machines only read the world; the engine hands back
+  //    modifiers, one-shot health deltas and player-facing messages.
+  const { modifiers, notifications, health, events } = eventsEngine.tick(
+    dt,
+    store
+  );
+  lastEngineFrame.events = events;
+
+  // 2. The Deity's demand is the standing quota plus whatever a law has
+  //    temporarily added on top.
+  const targetRate = store.baseTargetRate + modifiers.targetRateBonus;
+  if (targetRate !== store.targetRate) {
+    store.applyTargetRateBonus(modifiers.targetRateBonus);
+  }
+
+  // 3. Workforce: blocks, accidents, treatment.
+  stepMonkeyStates(dt, modifiers.blockedRoles);
+  const medical = stepMedical(dt, {
+    workerWellbeing: store.workerWellbeing,
+    hazardMultiplier: modifiers.hazardMultiplier,
+  });
+  lastEngineFrame.injuredCount = medical.waiting;
+
+  // 4. The economy. Everything above only reaches gold through here.
+  const wellbeingFactor = 0.5 + store.workerWellbeing / 200; // 0.5..1.0
+  const { coins, taxed, stolen, bottleneck } = stepPipeline(dt, {
+    wellbeingFactor,
+    throughputMultiplier: modifiers.throughputMultiplier,
+    corruptionDrain: modifiers.corruptionDrain,
+    taxRate: modifiers.taxRate,
+    demandRate: targetRate,
+    blockedRoles: modifiers.blockedRoles,
+  });
+
+  lastEngineFrame.bottleneck = bottleneck;
+
+  if (coins > 0) store.deliverCoin(coins);
+  if (taxed > 0 || stolen > 0) store.recordSkim({ taxed, stolen });
+  store.setCurrentRate(coins / dt);
+  store.tickStreak(dt);
+
+  // 5. The Deity reacts to the tribute and nothing else.
+  const deity = stepDeity(dt, {
+    currentRate: coins / dt,
+    targetRate,
+    streakSeconds: store.streakSeconds,
+  });
+  const wrath = maybeUnleashWrath(store.deityMood + deity.moodDelta);
+
+  const quotaRaise = deity.targetRateDelta + (wrath?.targetRateDelta ?? 0);
+  if (quotaRaise > 0) store.raiseBaseTargetRate(quotaRaise);
+
+  // 6. Fold every source of systemic change into a single update:
+  //    the societal drift, the per-second drifts from active events,
+  //    and the one-shot deltas from events that just changed state.
+  const drift = stepSociety(dt, {
+    workerWellbeing: store.workerWellbeing,
+    corruption: store.corruption,
+    politicalStability: store.politicalStability,
+    targetRate,
+    deityMood: store.deityMood,
+  });
+
+  store.applySystemicDeltas({
+    workerWellbeing:
+      drift.workerWellbeing + modifiers.wellbeingDelta * dt + health.workerWellbeing,
+    corruption: drift.corruption + modifiers.corruptionDelta * dt + health.corruption,
+    politicalStability:
+      drift.politicalStability +
+      modifiers.stabilityDelta * dt +
+      health.politicalStability +
+      deity.stabilityDelta +
+      (wrath?.stabilityDelta ?? 0),
+    deityMood: deity.moodDelta + (wrath?.moodDelta ?? 0),
+  });
+
+  const allNotifications = [...notifications, ...deity.notifications];
+  if (wrath?.notification) allNotifications.push(wrath.notification);
+  store.pushNotifications(allNotifications);
+}
+
+export function publishSnapshot() {
+  const store = useGameStore.getState();
+  const { events } = lastEngineFrame;
+  store.publishSnapshot({
+    activeEvents: events,
+    stages: pipelineSnapshot(),
+    bottleneck: lastEngineFrame.bottleneck,
+    injuredCount: lastEngineFrame.injuredCount,
+    reserves: treasury.reserves,
+    reserveCapacity: treasury.capacity,
+  });
+}
+
+// Cheap hand-off between the tick and the throttled snapshot publisher,
+// so the publisher never has to re-run simulation queries or re-tick the
+// engine just to read what the last tick already computed.
+const lastEngineFrame = {
+  events: [],
+  bottleneck: null,
+  injuredCount: 0,
+};

@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useGameStore } from "../state/useGameStore.js";
-import { stepPipeline, stepMonkeyStates } from "./pipeline.js";
+import { stepSimulation, publishSnapshot, TICK_DT } from "./tick.js";
 
-const TICK_RATE = 15; // Hz — simulation ticks per second
-const TICK_DT = 1 / TICK_RATE;
+// The HUD's heavier readouts (per-stage buffers, active event list) are
+// rebuilt at a slower cadence than the simulation: they are arrays of
+// objects, and republishing them 15 times a second re-renders the whole
+// overlay for changes no player can perceive.
+const SNAPSHOT_INTERVAL = 0.2;
 
 /**
  * Drives the fixed-tick simulation loop independently of render
@@ -11,22 +14,39 @@ const TICK_DT = 1 / TICK_RATE;
  * technique) so the sim stays deterministic even if the browser
  * tab throttles rendering.
  *
- * Mount this once near the root of the app.
+ * This hook owns *when* the simulation runs; `tick.js` owns *what* it
+ * does. Mount this once near the root of the app.
  */
 export function useGameLoop() {
   const accumulatorRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const rafRef = useRef(null);
+  const snapshotClockRef = useRef(0);
 
   useEffect(() => {
     function loop(now) {
       const frameDt = (now - lastTimeRef.current) / 1000;
       lastTimeRef.current = now;
+
+      if (useGameStore.getState().paused) {
+        // Drop the elapsed time on the floor rather than banking it, so
+        // unpausing doesn't fast-forward through the whole pause.
+        accumulatorRef.current = 0;
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
+
       accumulatorRef.current += Math.min(frameDt, 0.25); // clamp to avoid spiral of death
 
       while (accumulatorRef.current >= TICK_DT) {
-        runFixedTick(TICK_DT);
+        stepSimulation(TICK_DT);
         accumulatorRef.current -= TICK_DT;
+
+        snapshotClockRef.current += TICK_DT;
+        if (snapshotClockRef.current >= SNAPSHOT_INTERVAL) {
+          snapshotClockRef.current = 0;
+          publishSnapshot();
+        }
       }
 
       rafRef.current = requestAnimationFrame(loop);
@@ -35,27 +55,4 @@ export function useGameLoop() {
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
-}
-
-function runFixedTick(dt) {
-  const store = useGameStore.getState();
-
-  stepMonkeyStates(dt);
-
-  // TODO: derive these from union/police/political systems once
-  // the events engine lands. Flat placeholders for now so the
-  // pipeline is testable end-to-end.
-  const wellbeingFactor = 0.5 + store.workerWellbeing / 200; // 0.5..1.0
-  const corruptionDrain = store.corruption / 100;
-
-  const coinsThisTick = stepPipeline(dt, {
-    wellbeingFactor,
-    corruptionDrain,
-  });
-
-  if (coinsThisTick > 0) {
-    store.deliverCoin(coinsThisTick);
-  }
-  store.setCurrentRate(coinsThisTick / dt);
-  store.tickStreak(dt);
 }

@@ -1,7 +1,7 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { world, ROLES } from "../../simulation/world.js";
+import { world, ROLES, STATES } from "../../simulation/world.js";
 
 // Placeholder color coding per role — swap for real materials/models later.
 const ROLE_COLORS = {
@@ -21,30 +21,83 @@ const ROLE_COLORS = {
   [ROLES.MAFIOSO]: "#222222",
 };
 
+const INJURED_TINT = new THREE.Color("#d94a4a");
+const BLOCKED_TINT = new THREE.Color("#5a5a5a");
+
+/**
+ * Keeps a live list of the entities matching a query.
+ *
+ * The population is not fixed for the lifetime of the app — hiring,
+ * casualties and future spawning all change it — so the render layer
+ * subscribes to the archetype instead of snapshotting it once.
+ */
+function useEntities(archetype) {
+  const [entities, setEntities] = useState(() => [...archetype]);
+
+  useEffect(() => {
+    const refresh = () => setEntities([...archetype]);
+    // Miniplex's `subscribe` hands back the unsubscribe function.
+    const unsubscribeAdded = archetype.onEntityAdded.subscribe(refresh);
+    const unsubscribeRemoved = archetype.onEntityRemoved.subscribe(refresh);
+    refresh();
+    return () => {
+      unsubscribeAdded();
+      unsubscribeRemoved();
+    };
+  }, [archetype]);
+
+  return entities;
+}
+
 /**
  * Renders every monkey entity as a colored capsule via a single
  * InstancedMesh, since this is a scene with potentially hundreds
  * of agents — instancing keeps draw calls flat regardless of
  * population size. Swap the geometry for a real skinned mesh once
  * character art exists; the instancing strategy stays the same.
+ *
+ * Reads simulation state, never writes it: the bob animation and the
+ * state tints are derived from `entity.state` each frame, so the whole
+ * file can be replaced without the economy noticing.
  */
 export function MonkeyPopulation() {
   const meshRef = useRef();
-  const entities = useMemo(() => [...world.with("position", "role")], []);
+  const archetype = useMemo(() => world.with("position", "role", "state"), []);
+  const entities = useEntities(archetype);
   const dummy = useMemo(() => new THREE.Object3D(), []);
-  const colorArray = useMemo(() => new THREE.Color(), []);
+  const color = useMemo(() => new THREE.Color(), []);
+  const baseColors = useMemo(() => {
+    const cache = {};
+    for (const [role, hex] of Object.entries(ROLE_COLORS)) {
+      cache[role] = new THREE.Color(hex);
+    }
+    return cache;
+  }, []);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     const mesh = meshRef.current;
     if (!mesh) return;
+    const t = clock.elapsedTime;
 
     entities.forEach((entity, i) => {
       const [x, y, z] = entity.position;
-      dummy.position.set(x, y + 0.5, z);
+
+      // A small bob makes it legible at a glance who is actually
+      // working. Purely cosmetic: phase is derived from the index so it
+      // needs no per-entity state.
+      const working = entity.state === STATES.WORKING;
+      const bob = working ? Math.abs(Math.sin(t * 3 + i)) * 0.18 : 0;
+      const down = entity.state === STATES.INJURED;
+
+      dummy.position.set(x, y + (down ? 0.3 : 0.5) + bob, z);
+      dummy.rotation.set(down ? Math.PI / 2 : 0, 0, 0);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
-      colorArray.set(ROLE_COLORS[entity.role] ?? "#999999");
-      mesh.setColorAt(i, colorArray);
+
+      color.copy(baseColors[entity.role] ?? BLOCKED_TINT);
+      if (down) color.lerp(INJURED_TINT, 0.65);
+      else if (entity.state === STATES.BLOCKED) color.lerp(BLOCKED_TINT, 0.6);
+      mesh.setColorAt(i, color);
     });
 
     mesh.instanceMatrix.needsUpdate = true;
@@ -54,7 +107,14 @@ export function MonkeyPopulation() {
   if (entities.length === 0) return null;
 
   return (
-    <instancedMesh ref={meshRef} args={[null, null, entities.length]}>
+    // Keyed on population size so the instance buffers are rebuilt when
+    // the count changes rather than silently rendering stale instances.
+    <instancedMesh
+      key={entities.length}
+      ref={meshRef}
+      args={[null, null, entities.length]}
+      castShadow
+    >
       <capsuleGeometry args={[0.3, 0.6, 4, 8]} />
       <meshStandardMaterial />
     </instancedMesh>

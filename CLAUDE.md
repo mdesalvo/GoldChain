@@ -56,7 +56,7 @@ strict upgrade tree.
 UI Layer        React + Zustand        HUD, deity mood, notifications
 Render Layer    React Three Fiber      3D scene, instanced monkey meshes
 Simulation      Miniplex (ECS)         fixed-tick (15Hz) pipeline + monkey FSM
-Events Engine   (planned: XState)      strikes, breakdowns, mafia raids, laws
+Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
 ```
 
 ### Why these choices
@@ -122,17 +122,35 @@ Events Engine   (planned: XState)      strikes, breakdowns, mafia raids, laws
 Implemented:
 - Project structure (render / simulation / state layers)
 - ECS world with all pipeline + societal roles
-- Fixed-tick simulation loop with a basic bucket-chain economy model
-- Instanced 3D rendering of the monkey population
-- Minimal HUD (coins delivered, rate, streak, deity mood)
+- Fixed-tick simulation loop; tick body lives in
+  `src/simulation/tick.js`, free of React, so it can run headless
+- Bucket-chain economy with finite per-stage buffers (backpressure)
+  and a **reserve** the Deity is paid out of at exactly the demanded
+  rate — surplus banks up, a stoppage is survivable while it lasts
+- **Events engine** — one XState machine per disruption type
+  (strike, breakdown, mafia raid, legislation), stepped by explicit
+  `TICK` events
+- Medical system (accidents remove monkeys from the workforce,
+  shared treatment capacity puts them back)
+- Societal drift: each health score seeks an equilibrium set by
+  headcount in the non-productive roles
+- Deity mood, wrath, and a quota ratchet
+- Instanced 3D rendering, colour/pose reflecting monkey state
+- HUD: tribute, reserve, systemic meters, per-stage chain readout,
+  live systems panel, notification feed
+- Headless balance harness: `npm run sim -- <minutes> [seed]`
 
 Planned, not yet built:
-- **Events engine** (strikes, breakdowns, mafia raids, legislation) —
-  intended to be built with XState, modeling each disruption as an
-  explicit state machine (e.g. strike: `brewing -> active ->
-  negotiating -> resolved`) rather than ad-hoc flags. This is the
-  next major piece of work and the actual "game" layer on top of the
-  economic simulation.
+- **Player agency**: the reference mockup (`GoldChain.jpg`) calls for
+  per-system actions — NEGOTIATE, LOBBY, BUILD HOSPITAL, RAID,
+  INVESTIGATE — plus hiring/build tabs. Right now the player can only
+  watch, pause, and force events for testing. This is the next major
+  piece of work.
+- **Concurrent laws**: the legislation machine holds one law at a
+  time; the mockup shows a stack of active laws with numeric
+  parameters (tax %, minimum wage), which means one actor per law.
+- Diorama-style fixed-camera cross-section scene instead of the
+  current free-orbit field of capsules
 - Real monkey models/animations (currently colored capsules)
 - Pathfinding/movement between pipeline stages
 - Deity reaction system (visual/audio feedback tied to mood)
@@ -149,6 +167,24 @@ Planned, not yet built:
   systemic (unions/police/politics/medical), add its color to
   `ROLE_COLORS` in `MonkeyPopulation.jsx`, and add its count to
   `seedInitialPopulation()` in `world.js`.
+- When adding a disruption, add a machine under
+  `src/events/machines/` exporting four things — the machine, a
+  `describe*`, a `*Modifiers` and a `*Transition` — then register it
+  in `REGISTRY` in `eventsEngine.js`. Machines must be driven by the
+  engine's `TICK` event and never use XState's `after` delays:
+  wall-clock timers would tie disruption timing to render
+  performance, which the fixed-tick loop exists to prevent.
+- Machines must not touch buffers, entities or the store. They change
+  their own state; the engine translates state into modifiers. If a
+  machine needs to hurt somebody, it says so in its transition result
+  and the engine does it.
+- Use the seeded RNG in `src/simulation/rng.js`, never `Math.random`,
+  so a seed replays identically for balance work.
+- Never call `world.with(...).where(...)` inside the tick — it creates
+  and registers a new derived bucket every call. Use `byRole()` from
+  `world.js` (cached), and remember predicate buckets go stale on
+  in-place mutation, which is why state lookups (`withState`) filter
+  instead.
 - When adding a new disruption/event type, prefer modeling it as a
   state machine that can **block** one or more pipeline roles (via
   the `blockedRoles` modifier already threaded through
