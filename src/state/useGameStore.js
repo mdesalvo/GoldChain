@@ -48,6 +48,9 @@ export const useGameStore = create((set, get) => ({
   // out of here, which is why a stoppage upstream is survivable.
   reserves: 0,
   reserveCapacity: 0,
+  // What the player can do right now, with cost/cooldown/affordability
+  // already resolved. Rebuilt with the rest of the HUD snapshot.
+  actions: [],
   paused: false,
 
   // --- Actions ---

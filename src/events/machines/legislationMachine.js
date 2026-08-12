@@ -106,7 +106,21 @@ export const legislationMachine = createMachine({
   id: "legislation",
   initial: "recess",
   context: freshContext,
-  on: { FORCE: { target: ".drafting", actions: "openSession" } },
+  on: {
+    FORCE: { target: ".drafting", actions: "openSession" },
+    // Lobbying moves the vote count either way. It never enacts or kills
+    // a bill outright — the chamber still has to get there on its own,
+    // which is why blocking a bill can stall it into a dead session
+    // rather than defeating it cleanly.
+    LOBBY: {
+      actions: assign(({ context, event }) => ({
+        debate: Math.max(
+          0,
+          context.debate + DEBATE_WORK * 0.3 * (event.direction ?? 1)
+        ),
+      })),
+    },
+  },
   states: {
     recess: {
       on: {

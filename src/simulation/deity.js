@@ -108,12 +108,23 @@ export function maybeUnleashWrath(mood) {
   wrathCooldown = WRATH_COOLDOWN;
   return {
     moodDelta: 12, // venting helps, apparently
-    targetRateDelta: 0.1,
-    stabilityDelta: -12,
+    // Deliberately *not* a quota rise. Punishing failure by demanding
+    // more created a runaway: mood bottoms out, wrath fires every 20s,
+    // the quota climbs past anything the chain can physically produce,
+    // and recovery becomes arithmetically impossible. A 40-minute run
+    // ended on a demand of 8.6 coins/sec against a ceiling of 1.3.
+    //
+    // The quota ratchet is now driven only by *success*, which is
+    // self-limiting — it needs a streak, and streaks stop happening once
+    // the demand exceeds capacity. Wrath instead lands on the society,
+    // which is the joke anyway: the Deity never suffers the consequences
+    // of the Deity's displeasure.
+    stabilityDelta: -14,
+    wellbeingDelta: -8,
     notification: {
       tone: "wrath",
       message:
-        "WRATH: tribute stopped. The Deity raises the quota and the society absorbs the blame.",
+        "WRATH: tribute stopped. The Deity is displeased, and the society absorbs the blame.",
     },
   };
 }

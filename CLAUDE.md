@@ -140,12 +140,23 @@ Implemented:
   live systems panel, notification feed
 - Headless balance harness: `npm run sim -- <minutes> [seed]`
 
+- Player actions (`src/simulation/playerActions.js`): negotiate, lobby
+  for/against a bill, crack down, investigate, retrain workers between
+  chain and societal roles, emergency pay. Every action is paid for out
+  of the reserve — the same reserve the Deity is paid from — so funding
+  the society is always coin that does not reach the Deity.
+- Strategy harness: `npm run sim -- <min> <seed> watch|invest|exploit`
+
+**Known balance gap (measured, not guessed):** over 40 minutes, doing
+nothing (`watch`) currently beats both investing and exploiting, and
+ends with the Deity delighted. The design tension is in the code but
+not yet in the numbers — the default population is comfortable enough
+that disruptions never really threaten. Deciding whether the player
+should *start* under-resourced (so the systemic layer bites from
+minute one) or start comfortable and be squeezed by the quota ratchet
+is an open design call, not a tuning detail.
+
 Planned, not yet built:
-- **Player agency**: the reference mockup (`GoldChain.jpg`) calls for
-  per-system actions — NEGOTIATE, LOBBY, BUILD HOSPITAL, RAID,
-  INVESTIGATE — plus hiring/build tabs. Right now the player can only
-  watch, pause, and force events for testing. This is the next major
-  piece of work.
 - **Concurrent laws**: the legislation machine holds one law at a
   time; the mockup shows a stack of active laws with numeric
   parameters (tax %, minimum wage), which means one actor per law.

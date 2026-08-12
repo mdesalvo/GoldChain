@@ -36,7 +36,18 @@ export const mafiaRaidMachine = createMachine({
   id: "mafiaRaid",
   initial: "dormant",
   context: freshContext,
-  on: { FORCE: { target: ".casing", actions: "caseTheJob" } },
+  on: {
+    FORCE: { target: ".casing", actions: "caseTheJob" },
+    // A crackdown is a big jump in suspicion, not a guaranteed arrest:
+    // whether it foils the job depends on the stealth roll the crew is
+    // already sitting on, so throwing the force at a very careful crew
+    // can still come up empty.
+    CRACKDOWN: {
+      actions: assign(({ context }) => ({
+        suspicion: context.suspicion + context.stealth * 0.7,
+      })),
+    },
+  },
   states: {
     dormant: {
       on: {

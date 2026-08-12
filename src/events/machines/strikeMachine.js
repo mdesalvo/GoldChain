@@ -41,7 +41,18 @@ export const strikeMachine = createMachine({
   // Lets the engine start a walkout on demand (debug panel, scripted
   // scenario, future player action). It enters at the *start* of the
   // lifecycle, so a forced strike still has to brew and be negotiated.
-  on: { FORCE: { target: ".brewing", actions: assign({ timer: 0 }) } },
+  on: {
+    FORCE: { target: ".brewing", actions: assign({ timer: 0 }) },
+    // The player conceding at the table. It buys progress towards a
+    // settlement and drains the grievance reservoir, but it cannot skip
+    // the lifecycle: an active picket still has to reach negotiations.
+    CONCEDE: {
+      actions: assign(({ context }) => ({
+        pressure: Math.max(0, context.pressure - PRESSURE_THRESHOLD * 0.3),
+        progress: context.progress + NEGOTIATION_WORK * 0.35,
+      })),
+    },
+  },
   states: {
     dormant: {
       on: {

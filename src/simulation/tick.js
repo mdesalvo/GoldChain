@@ -9,6 +9,7 @@ import { stepMedical } from "./medical.js";
 import { stepSociety } from "./society.js";
 import { stepDeity, maybeUnleashWrath } from "./deity.js";
 import { eventsEngine } from "../events/eventsEngine.js";
+import { stepActionCooldowns, actionSnapshot } from "./playerActions.js";
 
 /**
  * One simulation tick, and the throttled HUD snapshot that goes with it.
@@ -41,6 +42,8 @@ export function stepSimulation(dt) {
   if (targetRate !== store.targetRate) {
     store.applyTargetRateBonus(modifiers.targetRateBonus);
   }
+
+  stepActionCooldowns(dt);
 
   // 3. Workforce: blocks, accidents, treatment.
   stepMonkeyStates(dt, modifiers.blockedRoles);
@@ -76,8 +79,9 @@ export function stepSimulation(dt) {
   });
   const wrath = maybeUnleashWrath(store.deityMood + deity.moodDelta);
 
-  const quotaRaise = deity.targetRateDelta + (wrath?.targetRateDelta ?? 0);
-  if (quotaRaise > 0) store.raiseBaseTargetRate(quotaRaise);
+  // Only sustained success raises the standing quota. Wrath punishes the
+  // society instead — see the note in `maybeUnleashWrath`.
+  if (deity.targetRateDelta > 0) store.raiseBaseTargetRate(deity.targetRateDelta);
 
   // 6. Fold every source of systemic change into a single update:
   //    the societal drift, the per-second drifts from active events,
@@ -92,7 +96,10 @@ export function stepSimulation(dt) {
 
   store.applySystemicDeltas({
     workerWellbeing:
-      drift.workerWellbeing + modifiers.wellbeingDelta * dt + health.workerWellbeing,
+      drift.workerWellbeing +
+      modifiers.wellbeingDelta * dt +
+      health.workerWellbeing +
+      (wrath?.wellbeingDelta ?? 0),
     corruption: drift.corruption + modifiers.corruptionDelta * dt + health.corruption,
     politicalStability:
       drift.politicalStability +
@@ -118,6 +125,7 @@ export function publishSnapshot() {
     injuredCount: lastEngineFrame.injuredCount,
     reserves: treasury.reserves,
     reserveCapacity: treasury.capacity,
+    actions: actionSnapshot(store),
   });
 }
 

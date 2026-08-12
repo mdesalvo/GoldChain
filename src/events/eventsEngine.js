@@ -241,6 +241,22 @@ export class EventsEngine {
     return true;
   }
 
+  /**
+   * Delivers a player event (CONCEDE, LOBBY, CRACKDOWN …) to one
+   * machine.
+   *
+   * Player events change a machine's context, never its rules: they push
+   * a negotiation forward, sway a vote, raise suspicion. A machine that
+   * ignores the event simply doesn't handle it, and the action reports
+   * nothing happened.
+   */
+  send(type, event) {
+    const actor = this.actors.get(type);
+    if (!actor) return false;
+    actor.send(event);
+    return true;
+  }
+
   stop() {
     for (const actor of this.actors.values()) actor.stop();
   }
