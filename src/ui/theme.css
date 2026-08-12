@@ -1,0 +1,759 @@
+/*
+ * GoldChain UI.
+ *
+ * The palette, the type scale and the panel treatment are lifted from
+ * the concept art in `GoldChain.jpg`: warm gold on near-black, thin
+ * bright borders, one dominant number per panel. Everything lives in one
+ * stylesheet with tokens rather than in inline styles, because inline
+ * styles were exactly why the previous HUD looked like a debug overlay —
+ * no shared scale, no consistent spacing, no hierarchy.
+ *
+ * Layout is a CSS grid shell: the viewport is a *pane* framed by the UI,
+ * not a full-screen canvas with boxes floating over it. That framing is
+ * most of what makes it read as a game rather than a demo.
+ */
+
+:root {
+  --ink: #08070a;
+  --panel: #14110f;
+  --panel-raised: #1e1a16;
+  --panel-sunken: #0d0b09;
+
+  --gold: #e8b743;
+  --gold-bright: #ffd766;
+  --gold-dim: #8a6f34;
+  --gold-wash: rgba(232, 183, 67, 0.12);
+
+  --text: #f2e9dc;
+  --text-soft: rgba(242, 233, 220, 0.68);
+  --text-faint: rgba(242, 233, 220, 0.4);
+
+  --good: #6ec96e;
+  --warn: #e8a13f;
+  --bad: #e05a4a;
+  --union: #a97bd6;
+  --politics: #5b9bd6;
+  --medical: #58c98a;
+  --security: #4a7bd6;
+  --mafia: #d6564a;
+
+  --edge: rgba(232, 183, 67, 0.28);
+  --edge-soft: rgba(255, 255, 255, 0.07);
+
+  --r: 7px;
+  --gap: 10px;
+
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+
+  font-synthesis-weight: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.shell {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr) 296px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "topbar topbar topbar"
+    "rail   stage  alerts"
+    "tabs   tabs   tabs";
+  gap: var(--gap);
+  padding: var(--gap);
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1a1410 0%, var(--ink) 70%);
+}
+
+.shell__topbar { grid-area: topbar; }
+.shell__rail   { grid-area: rail; overflow-y: auto; }
+.shell__stage  { grid-area: stage; min-width: 0; min-height: 0; }
+.shell__alerts { grid-area: alerts; overflow-y: auto; }
+.shell__tabs   { grid-area: tabs; }
+
+/* Thin, unobtrusive scrollbars — the rails scroll on short screens. */
+.shell__rail::-webkit-scrollbar,
+.shell__alerts::-webkit-scrollbar { width: 6px; }
+.shell__rail::-webkit-scrollbar-thumb,
+.shell__alerts::-webkit-scrollbar-thumb {
+  background: var(--gold-dim);
+  border-radius: 3px;
+}
+
+/* ---------------------------------------------------------------- panel */
+
+.panel {
+  background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+  border: 1px solid var(--edge);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+
+.panel--flush { padding: 10px 12px; }
+
+.panel__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  image-rendering: auto;
+}
+
+.icon--sm { width: 16px; height: 16px; }
+.icon--lg { width: 30px; height: 30px; }
+
+/* --------------------------------------------------------------- topbar */
+
+.topbar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--gap);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 12px;
+}
+
+.brand__name {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+
+.brand__sub {
+  font-size: 10.5px;
+  color: var(--text-soft);
+}
+
+/* The one number the whole game is about. */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 6px 20px;
+}
+
+.flow__block { text-align: center; }
+
+.flow__label {
+  font-size: 9.5px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.flow__value {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.flow__value--ok { color: var(--good); }
+.flow__value--off { color: var(--bad); }
+
+.flow__unit {
+  font-size: 9.5px;
+  letter-spacing: 1.2px;
+  color: var(--text-faint);
+}
+
+.flow__target {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.flow__verdict {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.topbar__spacer { flex: 1 1 auto; }
+
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock__day { font-size: 15px; font-weight: 700; }
+.clock__time { font-size: 13px; color: var(--text-soft); }
+
+.timectl { display: flex; align-items: center; gap: 5px; padding: 0 8px; }
+
+.tbtn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--gold);
+  background: var(--panel-sunken);
+  border: 1px solid var(--edge-soft);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.tbtn:hover { border-color: var(--edge); }
+.tbtn--on {
+  background: var(--gold-wash);
+  border-color: var(--gold);
+  color: var(--gold-bright);
+}
+
+/* ----------------------------------------------------------- system card */
+
+.sys {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+  padding: 7px 10px;
+  border-left: 3px solid var(--accent, var(--gold-dim));
+}
+
+/* The plate cut from the concept art, sunk behind the numbers so it
+   reads as texture rather than as a picture competing with them. */
+.sys__plate {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.17;
+  filter: saturate(0.8);
+  mask-image: linear-gradient(100deg, transparent 28%, #000 100%);
+  -webkit-mask-image: linear-gradient(100deg, transparent 28%, #000 100%);
+  pointer-events: none;
+}
+
+.sys > *:not(.sys__plate) { position: relative; }
+
+.sys__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.sys__name {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent, var(--gold));
+}
+
+.sys__state {
+  margin-left: auto;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9.5px;
+  letter-spacing: 0.6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--text-soft);
+}
+
+.sys__state--hot {
+  background: rgba(224, 90, 74, 0.22);
+  color: #ffb0a4;
+}
+
+.sys__detail {
+  font-size: 10.5px;
+  color: var(--text-soft);
+  line-height: 1.35;
+  min-height: 2.7em;
+}
+
+.sys__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+/* ---------------------------------------------------------------- meter */
+
+.meter { margin: 4px 0; }
+
+.meter__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-bottom: 3px;
+}
+
+.meter__row strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter__track {
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--edge-soft);
+  overflow: hidden;
+}
+
+.meter__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 220ms linear;
+  background: var(--meter, var(--gold));
+}
+
+/* --------------------------------------------------------------- action */
+
+.action {
+  padding: 4px 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  border: 1px solid var(--gold-bright);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.action:hover { filter: brightness(1.12); }
+
+.action:disabled {
+  color: var(--text-faint);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--edge-soft);
+  cursor: default;
+  filter: none;
+}
+
+.action__cost {
+  margin-left: 4px;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+/* -------------------------------------------------------------- viewport */
+
+.stage {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r);
+  border: 1px solid var(--edge);
+  overflow: hidden;
+  background: #0b0a08;
+  box-shadow: var(--shadow), inset 0 0 60px rgba(0, 0, 0, 0.6);
+}
+
+/* The painted set is letterboxed at its own aspect ratio rather than
+   cropped to fill. Cropping looked richer but cut the picket line and the
+   police station off the edges — and, more importantly, it broke the
+   hotspots: their positions are percentages of the plate, so the plate
+   has to be entirely visible for them to land on the right rooms. */
+.stage__frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* The plate is wider than the pane is tall, so there is always a band
+   above and below it. Rather than leave dead black there, the top band
+   becomes a marquee: what you are looking at, and what is being demanded
+   of it right now. */
+.stage__marquee {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  font-size: 10.5px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.stage__marquee-demand {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Width-driven: the plate is 1.82:1 and the pane is usually taller than
+   that, so sizing by width keeps the aspect exact and letterboxes the
+   leftover height. Sizing by height instead lets `max-width` clamp the
+   width while the height stays put, which silently stretches the art. */
+.stage__set {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 843 / 463;
+  max-height: 100%;
+}
+
+.stage__plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+}
+
+/* Vignette so the UI edges melt into the art instead of butting against it. */
+.stage__vignette {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 100% at 50% 40%, transparent 45%, rgba(0,0,0,0.72) 100%);
+}
+
+/* Hot spots pinned over the regions of the painted set they refer to, so
+   a strike lights up the picket line and a raid lights up the police. */
+.hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  color: var(--text);
+  background: rgba(8, 7, 10, 0.78);
+  border: 1px solid var(--accent, var(--gold));
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.6);
+  animation: pulse 1.7s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 183, 67, 0.35); }
+  50% { box-shadow: 0 0 0 7px rgba(232, 183, 67, 0); }
+}
+
+.hotspot__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, var(--gold));
+}
+
+/* The Deity's portrait belongs next to the wrath meter, not on the set:
+   the painted set already has a Deity in it, and two of them read as a
+   mistake. */
+.deity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 6px;
+}
+
+.deity img {
+  width: 54px;
+  border-radius: 5px;
+  border: 1px solid var(--edge);
+  display: block;
+}
+
+.deity__label {
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.deity__value { font-size: 15px; font-weight: 700; }
+
+.stage__toggle {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+}
+
+/* --------------------------------------------------------- stage strip */
+
+/* Floated into the letterbox band below the plate rather than given its
+   own row. The plate is centred in the pane, so that band is dead space
+   anyway; putting the strip there costs nothing and keeps the art
+   unobstructed. The translucent card backgrounds mean that on a short
+   window, where the band shrinks, overlapping the art degrades into a
+   readable overlay instead of a collision. */
+.strip {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 5px;
+}
+
+.stagecard {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 6px;
+  border: 1px solid var(--edge-soft);
+  background: rgba(8, 7, 10, 0.82);
+  overflow: hidden;
+  backdrop-filter: blur(3px);
+}
+
+.stagecard--jam { border-color: var(--warn); }
+.stagecard--dead { border-color: var(--bad); }
+
+.stagecard__art {
+  height: 34px;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.85;
+}
+
+.stagecard__body { padding: 4px 7px 6px; }
+
+.stagecard__name {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stagecard__stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.stagecard__rate {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.stagecard__buffer {
+  height: 3px;
+  margin-top: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.stagecard__buffer i {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+}
+
+/* --------------------------------------------------------------- alerts */
+
+.alert {
+  padding: 10px 12px;
+  margin-bottom: var(--gap);
+  border-radius: var(--r);
+  border: 1px solid var(--bad);
+  background: linear-gradient(180deg, rgba(224, 90, 74, 0.16), rgba(20, 17, 15, 0.9));
+}
+
+.alert--calm {
+  border-color: var(--edge);
+  background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+}
+
+.alert__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--bad);
+}
+
+.alert--calm .alert__head { color: var(--good); }
+
+.alert__body {
+  font-size: 11px;
+  color: var(--text-soft);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+.reserve {
+  padding: 10px 12px;
+  margin-bottom: var(--gap);
+}
+
+.reserve__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 8px;
+}
+
+.reserve__value {
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.reserve__cover { font-size: 10px; color: var(--text-faint); }
+
+.feed { display: flex; flex-direction: column; gap: 5px; }
+
+.feed__item {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  padding: 6px 9px;
+  font-size: 11px;
+  line-height: 1.35;
+  border-radius: 0 5px 5px 0;
+  border-left: 3px solid var(--tone, var(--gold));
+  background: rgba(8, 7, 10, 0.72);
+  cursor: pointer;
+}
+
+.feed__item:hover { background: rgba(30, 26, 22, 0.9); }
+.feed__mark { color: var(--tone, var(--gold)); }
+
+/* ----------------------------------------------------------------- tabs */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+
+.tab--on {
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  border-color: var(--gold-bright);
+}
+
+.tab:disabled {
+  color: var(--text-faint);
+  cursor: default;
+  background: transparent;
+}
+
+.tab__soon {
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-faint);
+}
+
+.tabs__spacer { flex: 1 1 auto; }
+
+.purse {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--edge-soft);
+}
+
+/* Narrow windows: drop the side rails under the viewport rather than
+   squeezing them until the numbers wrap. */
+@media (max-width: 1180px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(220px, 1fr) auto auto auto;
+    grid-template-areas:
+      "topbar"
+      "stage"
+      "rail"
+      "alerts"
+      "tabs";
+  }
+  .shell__rail { display: flex; gap: var(--gap); overflow-x: auto; }
+  .sys { margin-bottom: 0; min-width: 240px; }
+}

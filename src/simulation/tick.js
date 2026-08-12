@@ -5,7 +5,7 @@ import {
   pipelineSnapshot,
   treasury,
 } from "./pipeline.js";
-import { stepMedical } from "./medical.js";
+import { stepMedical, treatmentCapacity } from "./medical.js";
 import { stepSociety } from "./society.js";
 import { stepDeity, maybeUnleashWrath } from "./deity.js";
 import { eventsEngine } from "../events/eventsEngine.js";
@@ -44,6 +44,7 @@ export function stepSimulation(dt) {
   }
 
   stepActionCooldowns(dt);
+  store.advanceClock(dt);
 
   // 3. Workforce: blocks, accidents, treatment.
   stepMonkeyStates(dt, modifiers.blockedRoles);
@@ -52,6 +53,9 @@ export function stepSimulation(dt) {
     hazardMultiplier: modifiers.hazardMultiplier,
   });
   lastEngineFrame.injuredCount = medical.waiting;
+  lastEngineFrame.treatmentCapacity = treatmentCapacity();
+  lastEngineFrame.siphonRate = modifiers.corruptionDrain;
+  lastEngineFrame.blockedRoles = [...modifiers.blockedRoles];
 
   // 4. The economy. Everything above only reaches gold through here.
   const wellbeingFactor = 0.5 + store.workerWellbeing / 200; // 0.5..1.0
@@ -126,6 +130,9 @@ export function publishSnapshot() {
     reserves: treasury.reserves,
     reserveCapacity: treasury.capacity,
     actions: actionSnapshot(store),
+    treatmentCapacity: lastEngineFrame.treatmentCapacity,
+    siphonRate: lastEngineFrame.siphonRate,
+    blockedRoles: lastEngineFrame.blockedRoles,
   });
 }
 
@@ -136,4 +143,7 @@ const lastEngineFrame = {
   events: [],
   bottleneck: null,
   injuredCount: 0,
+  treatmentCapacity: 0,
+  siphonRate: 0,
+  blockedRoles: [],
 };

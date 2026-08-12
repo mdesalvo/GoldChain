@@ -36,7 +36,11 @@ export function useGameLoop() {
         return;
       }
 
-      accumulatorRef.current += Math.min(frameDt, 0.25); // clamp to avoid spiral of death
+      // Speed multiplies how much time we feed the accumulator, not the
+      // tick size, so the simulation is identical at 1x and 4x — just
+      // further along.
+      const speed = useGameStore.getState().speed;
+      accumulatorRef.current += Math.min(frameDt, 0.25) * speed; // clamp to avoid spiral of death
 
       while (accumulatorRef.current >= TICK_DT) {
         stepSimulation(TICK_DT);

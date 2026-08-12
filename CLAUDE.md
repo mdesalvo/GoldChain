@@ -53,8 +53,9 @@ strict upgrade tree.
 ## Architecture
 
 ```
-UI Layer        React + Zustand        HUD, deity mood, notifications
-Render Layer    React Three Fiber      3D scene, instanced monkey meshes
+UI Layer        React + Zustand        game shell: rails, stage cards, feed
+Render Layer    painted backdrop       concept-art cross-section + overlays
+                React Three Fiber      live 3D view, behind a toggle
 Simulation      Miniplex (ECS)         fixed-tick (15Hz) pipeline + monkey FSM
 Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
 ```
@@ -93,9 +94,13 @@ Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
 | `src/simulation/world.js` | ECS world, role definitions, entity spawning, reusable queries |
 | `src/simulation/pipeline.js` | Bucket-chain economy model: per-stage throughput, buffers, corruption drain |
 | `src/simulation/useGameLoop.js` | Fixed-tick driver (15Hz) that steps the simulation and feeds results into the store |
+| `src/simulation/playerActions.js` | Everything the player can do, priced against the reserve |
+| `src/ui/theme.css` | Design tokens and every UI style. No inline styles |
+| `src/ui/Viewport.jsx` | Centre pane: painted backdrop, hotspots, stage cards, 3D toggle |
+| `src/ui/SystemRail.jsx` | Left rail: one card per societal system, with its actions |
+| `src/ui/AlertRail.jsx` | Right rail: flow alert, deity mood/wrath, reserve, event feed |
 | `src/render/Scene.jsx` | R3F canvas, lighting, camera, ground plane |
 | `src/render/components/MonkeyPopulation.jsx` | Instanced-mesh rendering of all monkey entities, color-coded by role |
-| `src/render/components/Hud.jsx` | Overlay showing coins delivered, rate vs. target, streak, deity mood |
 
 ## Conventions
 
@@ -111,6 +116,12 @@ Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
   `pipeline.js`). They exist to make the loop testable end-to-end,
   not as final game balance — expect them to change significantly
   once the events engine and real playtesting arrive.
+- **DOM UI lives in `src/ui/`, R3F lives in `src/render/`.** The two
+  never import from each other. Both read the store and the ECS; neither
+  writes simulation state.
+- **UI styling goes in `src/ui/theme.css`, via tokens.** Inline styles
+  are what made the first HUD look like a debug overlay: no shared type
+  scale, no consistent spacing, no hierarchy.
 - **Rendering is disposable, simulation is not.** The current
   capsule-mesh monkeys are explicitly placeholder art. Do not couple
   simulation logic to render implementation details (e.g. don't put
@@ -160,16 +171,37 @@ Planned, not yet built:
 - **Concurrent laws**: the legislation machine holds one law at a
   time; the mockup shows a stack of active laws with numeric
   parameters (tax %, minimum wage), which means one actor per law.
-- Diorama-style fixed-camera cross-section scene instead of the
-  current free-orbit field of capsules
-- Real monkey models/animations (currently colored capsules)
+- Real monkey models/animations for the 3D view (currently colored
+  capsules, reachable via the viewport's 3D toggle)
 - Pathfinding/movement between pipeline stages
 - Deity reaction system (visual/audio feedback tied to mood)
 - Save/load, difficulty tuning, win/loss conditions
 
+## Art
+
+`public/art/` is cut directly from the concept image
+(`~/Desktop/GoldChain.jpg`) by hand-picked crop boxes: the
+cross-section backdrop, the Deity portrait, per-system plates (picket
+line, podium, hospital, police station, mafia corner), the five stage
+thumbnails, and the icon set (background keyed out to alpha).
+
+The centre pane is a **painted backdrop with live overlays**, not a
+rendered scene. Hotspot positions in `Viewport.jsx` are percentages of
+that plate, which is why the plate is letterboxed at its exact aspect
+ratio rather than cropped to fill — cropping silently moves every
+hotspot off its room. If the backdrop is ever re-cropped, the region
+percentages have to be recomputed with it.
+
+The R3F scene is still the honest view of the simulation (every capsule
+is a real entity) and lives behind the viewport's 3D toggle.
+
 ## Working on this repo
 
 - Run `npm install && npm run dev` to start the dev server.
+- `?skip=180` fast-forwards 180 simulated seconds before the first
+  paint (dev builds only). A fresh game shows every meter at its
+  starting value, which is the one state that tells you nothing about
+  whether the UI works.
 - Run `npm run build` before committing any change that touches
   `src/simulation/` or `src/render/` — it's the fastest way to catch
   broken imports across the ECS/render boundary.

@@ -10,7 +10,9 @@ export function Scene() {
       // pipeline is laid out left-to-right across ~48 units in
       // `stagePosition()`, with the societal roles on a back row.
       camera={{ position: [0, 16, 40], fov: 42 }}
-      style={{ width: "100vw", height: "100vh" }}
+      // Sized by its container now that the canvas is a pane in the UI
+      // grid rather than the whole window.
+      style={{ position: "absolute", inset: 0 }}
     >
       <Sky sunPosition={[10, 20, 10]} />
       <ambientLight intensity={0.5} />

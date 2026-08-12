@@ -23,6 +23,9 @@ export const useGameStore = create((set, get) => ({
   currentRate: 0, // coins per second actually being delivered
   streakSeconds: 0, // consecutive seconds the target rate was met
   longestStreakSeconds: 0,
+  // Simulation time, in seconds. The UI turns this into the day/clock
+  // readout; nothing in the simulation reads it.
+  elapsedSeconds: 0,
   taxedTotal: 0, // coin skimmed by legislation
   stolenTotal: 0, // gold siphoned out of the chain by the mafia
 
@@ -51,13 +54,21 @@ export const useGameStore = create((set, get) => ({
   // What the player can do right now, with cost/cooldown/affordability
   // already resolved. Rebuilt with the rest of the HUD snapshot.
   actions: [],
+  treatmentCapacity: 0,
+  siphonRate: 0, // units/sec the mafia is currently siphoning
+  blockedRoles: [],
   paused: false,
+  // Time multiplier. The loop still steps a fixed dt — it just steps it
+  // more times per frame — so speeding up never changes the outcome.
+  speed: 1,
 
   // --- Actions ---
   deliverCoin: (amount = 1) =>
     set((s) => ({ coinsDelivered: s.coinsDelivered + amount })),
 
   setCurrentRate: (rate) => set({ currentRate: rate }),
+
+  advanceClock: (dt) => set((s) => ({ elapsedSeconds: s.elapsedSeconds + dt })),
 
   /** Permanently raises what the Deity demands (never lowered). */
   raiseBaseTargetRate: (delta) =>
@@ -149,6 +160,8 @@ export const useGameStore = create((set, get) => ({
     })),
 
   togglePaused: () => set((s) => ({ paused: !s.paused })),
+
+  setSpeed: (speed) => set({ speed, paused: false }),
 }));
 
 function clamp(value, min = 0, max = 100) {

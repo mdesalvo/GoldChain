@@ -74,6 +74,28 @@ const RESERVE_CAPACITY = 60;
 
 export const treasury = { reserves: 0, capacity: RESERVE_CAPACITY };
 
+/**
+ * Smoothed per-stage output, for the stage cards in the UI.
+ *
+ * `rate` is units/sec leaving the stage, `load` is how much of the
+ * stage's theoretical capacity it actually used (the concept art's
+ * "productivity %"). Both are exponentially smoothed: the raw per-tick
+ * numbers jitter at 15Hz and a jittering readout is unreadable, but the
+ * smoothing must never feed back into the simulation — it exists purely
+ * so a human can see what the chain is doing.
+ */
+export const stageFlow = Object.fromEntries(
+  PIPELINE_ORDER.map((role) => [role, { rate: 0, load: 0 }])
+);
+
+const FLOW_SMOOTHING = 0.08;
+
+function recordFlow(role, rate, load) {
+  const entry = stageFlow[role];
+  entry.rate += (rate - entry.rate) * FLOW_SMOOTHING;
+  entry.load += (load - entry.load) * FLOW_SMOOTHING;
+}
+
 export function bufferCapacity(role) {
   return role === ROLES.MINER ? Infinity : BUFFER_CAPACITY;
 }
@@ -108,8 +130,15 @@ export function stepPipeline(dt, modifiers = {}) {
   } = modifiers;
 
   let produced = 0;
-  let bottleneck = null;
-  let worstRatio = Infinity;
+  // Bottleneck detection. A stage held back because the buffer in front
+  // of it is full is a *victim* of the jam, not its cause — reporting the
+  // miners as the bottleneck when the smelters are the real constraint
+  // sends the player to fix the wrong end of the chain. So: a blocked
+  // stage always wins, and otherwise the cause is the stage running flat
+  // out with the least capacity to give.
+  let blockedBottleneck = null;
+  let limiter = null;
+  let limiterCapacity = Infinity;
 
   // Walk the chain backwards so each stage drains into the room its
   // downstream neighbour freed up *last* tick. Walking forwards would
@@ -120,17 +149,16 @@ export function stepPipeline(dt, modifiers = {}) {
     const nextRole = PIPELINE_ORDER[i + 1];
 
     if (blockedRoles.has(role)) {
-      bottleneck = role;
-      worstRatio = -1;
+      recordFlow(role, 0, 0);
+      blockedBottleneck = role;
       continue;
     }
 
     const workers = ableWorkerCount(role);
     if (workers === 0) {
-      if (worstRatio > 0) {
-        bottleneck = role;
-        worstRatio = 0;
-      }
+      recordFlow(role, 0, 0);
+      // Nobody able to work is as hard a stop as a strike.
+      blockedBottleneck ??= role;
       continue;
     }
 
@@ -167,9 +195,14 @@ export function stepPipeline(dt, modifiers = {}) {
     }
 
     const ratio = capacityThisTick > 0 ? moved / capacityThisTick : 0;
-    if (ratio < worstRatio) {
-      worstRatio = ratio;
-      bottleneck = role;
+    recordFlow(role, moved / dt, ratio);
+
+    // Bound by its own throughput rather than by supply or by downstream
+    // room: this stage is genuinely working as hard as it can.
+    const flatOut = moved >= capacityThisTick - 1e-9;
+    if (flatOut && capacityThisTick < limiterCapacity) {
+      limiterCapacity = capacityThisTick;
+      limiter = role;
     }
   }
 
@@ -206,7 +239,13 @@ export function stepPipeline(dt, modifiers = {}) {
 
   const taxed = withdrawn * Math.max(0, Math.min(1, taxRate));
 
-  return { coins: withdrawn - taxed, taxed, stolen, produced, bottleneck };
+  return {
+    coins: withdrawn - taxed,
+    taxed,
+    stolen,
+    produced,
+    bottleneck: blockedBottleneck ?? limiter,
+  };
 }
 
 /**
@@ -254,5 +293,7 @@ export function pipelineSnapshot() {
     capacity: bufferCapacity(role) === Infinity ? null : bufferCapacity(role),
     workers: ableWorkerCount(role),
     total: countByRole(role),
+    rate: stageFlow[role].rate,
+    load: stageFlow[role].load,
   }));
 }
