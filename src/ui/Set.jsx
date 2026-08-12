@@ -3,18 +3,14 @@ import { useGameStore } from "../state/useGameStore.js";
 import { EVENT_TYPES } from "../events/eventTypes.js";
 import { ROLES } from "../simulation/world.js";
 import { Scene } from "../render/Scene.jsx";
-import { BACKDROP_ASPECT, REGIONS } from "./artRegions.js";
+import { REGIONS } from "./artRegions.js";
 
 /**
- * The set: the concept painting, full window, with everything else layered
- * over it.
+ * The set: the concept painting, untouched, filling the design space.
  *
- * This is the whole reason the artwork can be this big. The alternative —
- * a cropped plate in a pane, with the panels beside it — cost the picture
- * both the width the side rails took and every region the concept's own UI
- * had been sitting on. Filling those footprints flat (see
- * `scripts/extract-art.py`) means our panels can go exactly where theirs
- * were, and nothing has to be cropped to stay clear of them.
+ * Because the design space is a fixed 1376x768 scaled as one piece, the
+ * badges can be placed at plain concept pixel coordinates — no conversion,
+ * no drift, and the whole picture is always visible.
  *
  * Nothing here animates. The badges are pinned to the rooms they describe
  * and appear or disappear with the machine states; that is a state change,
@@ -30,57 +26,21 @@ const STAGE_REGION = {
   [ROLES.DRIVER]: "mines",
 };
 
-/**
- * The backdrop is drawn `cover`, so it overflows the window on one axis
- * and a percentage of the image is not a percentage of the window. This
- * returns the image's rendered box so the badges can be placed against
- * the painting rather than against the viewport.
- */
-function useCoverBox() {
-  const [box, setBox] = useState(() => coverBox());
-
-  useEffect(() => {
-    const onResize = () => setBox(coverBox());
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  return box;
-}
-
-function coverBox() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const wide = w / h > BACKDROP_ASPECT;
-  // Cover: the axis that would leave a gap is the one that gets scaled up.
-  const width = wide ? w : h * BACKDROP_ASPECT;
-  const height = wide ? w / BACKDROP_ASPECT : h;
-  return { left: (w - width) / 2, top: (h - height) / 2, width, height };
-}
-
-export function Backdrop({ showScene }) {
+export function Set({ showScene }) {
   const events = useGameStore((s) => s.activeEvents);
   const injured = useGameStore((s) => s.injuredCount);
-  const flowMet = useGameStore((s) => s.flowMet);
-  const box = useCoverBox();
 
-  if (showScene) {
-    return (
-      <div className="backdrop">
-        <Scene />
-      </div>
-    );
-  }
+  if (showScene) return <Scene />;
 
   return (
-    <div className={`backdrop${flowMet ? "" : " backdrop--stalled"}`}>
+    <>
       <img
-        className="backdrop__art"
+        className="design__art"
         src="/art/backdrop.jpg"
         alt="The society, in cross-section: the Deity above, the chain below"
         draggable={false}
       />
-      <div className="backdrop__vignette" />
+      <div className="design__vignette" />
 
       {badges(events, injured).map((badge) => {
         const region = REGIONS[badge.region];
@@ -89,8 +49,8 @@ export function Backdrop({ showScene }) {
             key={badge.key}
             className={`hotspot hotspot--${region.align}`}
             style={{
-              left: box.left + (parseFloat(region.left) / 100) * box.width,
-              top: box.top + (parseFloat(region.top) / 100) * box.height,
+              left: region.left,
+              top: region.top,
               "--accent": badge.accent,
             }}
             title={badge.detail}
@@ -100,7 +60,7 @@ export function Backdrop({ showScene }) {
           </div>
         );
       })}
-    </div>
+    </>
   );
 }
 

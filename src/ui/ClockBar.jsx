@@ -21,75 +21,77 @@ function gameClock(elapsedSeconds) {
 }
 
 /**
- * Top-centre-right: the clock and the time controls, where the concept
- * puts them.
+ * Top-right: the clock, and the time controls beside it, in the two boxes
+ * the concept puts them in.
  *
  * Speed multiplies how much elapsed time feeds the accumulator, never the
  * tick size, so 4× is the same simulation further along rather than a
  * coarser one.
  */
-export function ClockBar({ showScene, onToggleScene }) {
+export function ClockPanel() {
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
+  const { day, time } = gameClock(elapsedSeconds);
+
+  return (
+    <div className="panel clock">
+      <span className="clock__day">Day {day}</span>
+      <span className="clock__time">{time}</span>
+    </div>
+  );
+}
+
+export function ControlPanel({ showScene, onToggleScene }) {
   const paused = useGameStore((s) => s.paused);
   const speed = useGameStore((s) => s.speed);
   const togglePaused = useGameStore((s) => s.togglePaused);
   const setSpeed = useGameStore((s) => s.setSpeed);
 
-  const { day, time } = gameClock(elapsedSeconds);
-
   return (
-    <div className="clockbar">
-      <div className="panel clock">
-        <span className="clock__day">Day {day}</span>
-        <span className="clock__time">{time}</span>
-      </div>
-
-      <div className="panel timectl">
-        <button
-          type="button"
-          className={`tbtn${paused ? " tbtn--on" : ""}`}
-          onClick={togglePaused}
-          title="Pause"
+    <div className="panel timectl">
+      <button
+        type="button"
+        className={`tbtn${paused ? " tbtn--on" : ""}`}
+        onClick={togglePaused}
+        title="Pause"
         >
-          <span className="tbtn__pause" />
+        <span className="tbtn__pause" />
         </button>
-        <button
-          type="button"
-          className={`tbtn${!paused && speed === 1 ? " tbtn--on" : ""}`}
-          onClick={() => setSpeed(1)}
-          title="Normal speed"
+      <button
+        type="button"
+        className={`tbtn${!paused && speed === 1 ? " tbtn--on" : ""}`}
+        onClick={() => setSpeed(1)}
+        title="Normal speed"
         >
-          <Icon name="play" size="sm" alt="" />
+        <Icon name="play" size="sm" alt="" />
         </button>
-        <button
-          type="button"
-          className={`tbtn${!paused && speed === 2 ? " tbtn--on" : ""}`}
-          onClick={() => setSpeed(2)}
-          title="Double speed"
+      <button
+        type="button"
+        className={`tbtn${!paused && speed === 2 ? " tbtn--on" : ""}`}
+        onClick={() => setSpeed(2)}
+        title="Double speed"
         >
-          <Icon name="fastforward" size="sm" alt="" />
+        <Icon name="fastforward" size="sm" alt="" />
         </button>
-        <button
-          type="button"
-          className={`tbtn${!paused && speed === 4 ? " tbtn--on" : ""}`}
-          onClick={() => setSpeed(4)}
-          title="Quadruple speed"
+      <button
+        type="button"
+        className={`tbtn${!paused && speed === 4 ? " tbtn--on" : ""}`}
+        onClick={() => setSpeed(4)}
+        title="Quadruple speed"
         >
-          <span className="tbtn__x4">4×</span>
+        <span className="tbtn__x4">4×</span>
         </button>
-        <button
-          type="button"
-          className={`tbtn${showScene ? " tbtn--on" : ""}`}
-          onClick={onToggleScene}
-          title={
-            showScene
-              ? "Back to the painted set"
-              : "Show the live 3D simulation instead"
-          }
+      <button
+        type="button"
+        className={`tbtn${showScene ? " tbtn--on" : ""}`}
+        onClick={onToggleScene}
+        title={
+          showScene
+            ? "Back to the painted set"
+            : "Show the live 3D simulation instead"
+        }
         >
-          <span className="tbtn__x4">{showScene ? "2D" : "3D"}</span>
-        </button>
-      </div>
+        <span className="tbtn__x4">{showScene ? "2D" : "3D"}</span>
+      </button>
     </div>
   );
 }

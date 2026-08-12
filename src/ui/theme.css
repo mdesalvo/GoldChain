@@ -8,9 +8,9 @@
  * styles were exactly why the previous HUD looked like a debug overlay —
  * no shared scale, no consistent spacing, no hierarchy.
  *
- * Layout is a CSS grid shell: the viewport is a *pane* framed by the UI,
- * not a full-screen canvas with boxes floating over it. That framing is
- * most of what makes it read as a game rather than a demo.
+ * Layout is a fixed 1376x768 design space scaled to the window, so every
+ * position in here is a concept pixel and our panels land exactly on the
+ * ones painted into the artwork. See the note above `.design`.
  */
 
 :root {
@@ -68,32 +68,53 @@ button {
   font-family: inherit;
 }
 
-/* ---------------------------------------------------------------- shell */
+/* --------------------------------------------------------------- screen */
 
-/* The set is the window; everything else is layered over it.
+/* The screen is a fixed 1376x768 design space, scaled uniformly to fit the
+ * window.
  *
- * This grid only *positions* panels — the middle cell is deliberately
- * empty so the painting shows through, and the shell itself is
- * pointer-transparent so the empty space doesn't swallow clicks. Panel
- * placement mirrors the concept: title and flow top-left, systems down the
- * left, clock and speed top-centre, the alert box top-right, the work
- * units in a strip along the bottom, tabs beneath.
+ * This is the answer to a problem three earlier layouts got wrong. The
+ * concept's own UI is painted into the artwork at fixed coordinates; our
+ * panels have to cover it exactly, or their captions show through. A
+ * responsive grid can never do that — our panels land wherever the window
+ * puts them — so earlier versions tried to paint their UI out of the
+ * image, and every fill was visible: flat colour left dead bands,
+ * mirroring duplicated the picket signs with the lettering reversed, and a
+ * blurred smear left a band across the whole width.
  *
- * The concept's own UI footprints are filled flat in the backdrop, so our
- * panels land on top of where theirs were and nothing of theirs shows.
+ * Scaling one fixed layout fixes it at the root. Our panels sit exactly on
+ * theirs at every window size, the artwork needs no retouching at all, and
+ * the whole picture is always visible — `cover` was cropping the top of
+ * the Deity's head off on any window wider than 1.79:1.
+ *
+ * Everything inside `.design` is authored in concept pixels.
  */
-.backdrop {
+.bleed {
   position: fixed;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
-  background: var(--ink);
+  background: url("/art/backdrop.jpg") center / cover no-repeat;
+  filter: blur(46px) brightness(0.3) saturate(0.8);
+  transform: scale(1.12);
 }
 
-.backdrop__art {
+.design {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 1376px;
+  height: 768px;
+  z-index: 1;
+  transform: translate(-50%, -50%) scale(var(--design-scale, 1));
+  transform-origin: center;
+  box-shadow: 0 0 90px rgba(0, 0, 0, 0.8);
+}
+
+.design__art {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   display: block;
   filter: saturate(1.06) contrast(1.04);
   transition: filter 700ms ease;
@@ -101,56 +122,58 @@ button {
 
 /* The set drains of colour when the tribute fails. A state change, not a
    loop: it only happens when something has actually gone wrong. */
-.backdrop--stalled .backdrop__art {
+.design--stalled .design__art {
   filter: saturate(0.4) contrast(0.95) brightness(0.72);
 }
 
-.backdrop__vignette {
+.design__vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(34% 26% at 50% 14%, rgba(255, 216, 130, 0.14), transparent 70%),
-    radial-gradient(125% 115% at 50% 44%, transparent 46%, rgba(0, 0, 0, 0.8) 100%);
+    radial-gradient(30% 24% at 50% 12%, rgba(255, 216, 130, 0.13), transparent 70%),
+    radial-gradient(128% 118% at 50% 44%, transparent 52%, rgba(0, 0, 0, 0.72) 100%);
 }
 
-.shell {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  display: grid;
-  /* The rails overlay the painting rather than taking width from it — the
-     backdrop is drawn `cover` across the whole window — so their width
-     costs nothing in artwork and is set purely by what the text needs. */
-  grid-template-columns: 274px minmax(0, 1fr) 320px;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-  grid-template-areas:
-    "brand clock alert"
-    "rail  .     alert"
-    "rail  strip strip"
-    "tabs  tabs  tabs";
-  gap: var(--gap);
-  padding: var(--gap);
-  pointer-events: none;
+/* Panel boxes, measured off the concept so ours land on theirs. */
+.at {
+  position: absolute;
 }
 
-.shell > * {
-  pointer-events: auto;
-  min-width: 0;
-}
+/* Every box is measured off the concept, height included. Ours have to be
+   at least as large as theirs or their panel shows underneath — which is
+   exactly what happened when the stage cards were shorter than the ones
+   painted into the picture. */
+.at--brand  { left: 8px;    top: 8px;   width: 306px; height: 56px; }
+.at--flow   { left: 8px;    top: 66px;  width: 226px; height: 148px; }
+/* Opaque, not just a container: the concept's own rail is a continuous
+   column, so any gap between our cards showed its captions ("Current Laws
+   (11)", "Siphoning: 0.157 coins/sec") through from underneath. */
+.at--rail   { left: 8px;    top: 216px; width: 224px; height: 492px;
+              overflow-y: auto; overflow-x: hidden;
+              border-radius: var(--r);
+              background: linear-gradient(180deg,
+                rgba(14, 11, 9, 0.96), rgba(9, 7, 6, 0.96));
+              box-shadow: inset 0 0 0 1px rgba(232, 183, 67, 0.14);
+              /* Five cards come to a little more than the 492 the concept
+                 gives the rail, so the last one scrolls. The fade says so
+                 rather than letting it look clipped. */
+              mask-image: linear-gradient(180deg, #000 94%, transparent 100%);
+              -webkit-mask-image: linear-gradient(180deg, #000 94%, transparent 100%); }
+.at--clock  { left: 1036px; top: 8px;   width: 164px; height: 46px; }
+.at--ctrl   { left: 1202px; top: 8px;   width: 170px; height: 46px; }
+.at--alert  { left: 1076px; top: 60px;  width: 292px; height: 192px; }
+.at--feed   { left: 1076px; top: 258px; width: 292px; height: 236px;
+              overflow: hidden; }
+.at--strip  { left: 230px;  top: 518px; width: 904px; height: 186px; }
+.at--purse  { left: 1138px; top: 518px; width: 230px; height: 186px; }
+.at--tabs   { left: 8px;    top: 710px; width: 1360px; height: 50px; }
 
-.shell__brand { grid-area: brand; }
-.shell__clock { grid-area: clock; justify-self: end; align-self: start; }
-.shell__alert { grid-area: alert; overflow-y: auto; }
-.shell__rail  { grid-area: rail; overflow-y: auto; }
-.shell__strip { grid-area: strip; align-self: end; }
-.shell__tabs  { grid-area: tabs; }
+.at--brand > *, .at--flow > *, .at--clock > *, .at--ctrl > *,
+.at--alert, .at--purse > *, .at--tabs > * { height: 100%; }
 
-/* Thin, unobtrusive scrollbars — the rails scroll on short screens. */
-.shell__rail::-webkit-scrollbar,
-.shell__alert::-webkit-scrollbar { width: 6px; }
-.shell__rail::-webkit-scrollbar-thumb,
-.shell__alert::-webkit-scrollbar-thumb {
+.at--rail::-webkit-scrollbar { width: 5px; }
+.at--rail::-webkit-scrollbar-thumb {
   background: var(--gold-dim);
   border-radius: 3px;
 }
@@ -196,12 +219,6 @@ button {
 
 /* ------------------------------------------------------- brand and flow */
 
-.brandpanel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .brandpanel__head {
   display: flex;
   align-items: center;
@@ -221,7 +238,7 @@ button {
   color: var(--text-soft);
 }
 
-.brandpanel__flow { padding: 8px 14px 10px; }
+.brandpanel__flow { padding: 7px 13px; }
 
 .flowline + .flowline {
   margin-top: 7px;
@@ -244,7 +261,7 @@ button {
 }
 
 .flow__value {
-  font-size: 40px;
+  font-size: 34px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -260,7 +277,7 @@ button {
 }
 
 .flow__target {
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 700;
   line-height: 1.05;
   color: var(--gold-bright);
@@ -275,33 +292,29 @@ button {
 
 /* --------------------------------------------------------- clock, speed */
 
-.clockbar {
-  display: flex;
-  align-items: stretch;
-  gap: var(--gap);
-}
-
 .clock {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 16px;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 14px;
   font-variant-numeric: tabular-nums;
 }
 
-.clock__day { font-size: 18px; font-weight: 700; }
-.clock__time { font-size: 15px; color: var(--text-soft); }
+.clock__day { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.clock__time { font-size: 13px; color: var(--text-soft); white-space: nowrap; }
 
 .timectl {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 8px;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 6px;
 }
 
 .tbtn {
-  width: 38px;
-  height: 38px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   font-size: 13px;
@@ -340,8 +353,8 @@ button {
 .sys {
   position: relative;
   overflow: hidden;
-  margin-bottom: 6px;
-  padding: 6px 10px 8px;
+  margin-bottom: 4px;
+  padding: 5px 10px 7px;
   border-left: 3px solid var(--accent, var(--gold-dim));
 }
 
@@ -433,22 +446,22 @@ button {
 /* Clamped rather than given a minimum: the cards have to add up to less
    than the window's height, and two lines is enough for any of these
    messages. */
+/* One line, clamped. Five cards have to fit the rail's 492 design pixels,
+   and the full text is in the card's tooltip. */
 .sys__detail {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-soft);
-  line-height: 1.32;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
-  min-height: 2.64em;
+  text-overflow: ellipsis;
 }
 
 .sys__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 5px;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 /* ---------------------------------------------------------------- meter */
@@ -486,7 +499,7 @@ button {
 /* --------------------------------------------------------------- action */
 
 .action {
-  padding: 4px 7px;
+  padding: 3px 6px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -634,11 +647,13 @@ button {
 
 /* --------------------------------------------------------- stage strip */
 
-/* The work units, along the bottom of the set. */
+/* Eight work units across 904 design pixels, as tall as the five painted
+   into the picture underneath them. */
 .strip {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   align-items: stretch;
+  height: 100%;
 }
 
 /* The art in these is 34px tall, so it can only ever read as a texture.
@@ -648,6 +663,8 @@ button {
 .stagecard {
   flex: 1 1 0;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   border-radius: 6px;
   border: 1px solid var(--edge-soft);
   background: rgba(8, 7, 10, 0.82);
@@ -690,9 +707,12 @@ button {
   filter: saturate(0.25) brightness(0.62);
 }
 
+/* Grows to fill the card, so the strip matches the height of the cards
+   painted into the picture underneath it without leaving dead space. */
 .stagecard__art {
   position: relative;
-  height: 34px;
+  flex: 1 1 auto;
+  min-height: 62px;
   background-image: var(--plate);
   background-size: cover;
   background-position: center;
@@ -713,10 +733,10 @@ button {
   );
 }
 
-.stagecard__body { padding: 4px 7px 6px; }
+.stagecard__body { padding: 5px 7px 6px; }
 
 .stagecard__name {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -729,13 +749,15 @@ button {
 .stagecard__stat {
   display: flex;
   justify-content: space-between;
-  font-size: 11.5px;
+  gap: 4px;
+  font-size: 11px;
   color: var(--text-soft);
   font-variant-numeric: tabular-nums;
 }
 
 .stagecard__rate {
-  font-size: 13px;
+  margin-top: 3px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--gold-bright);
   font-variant-numeric: tabular-nums;
@@ -757,9 +779,10 @@ button {
 
 /* Wider than a stage card, and no illustration: it is the end of the
    chain, not a stage of it. */
+/* The reserve panel: the concept's bottom-right box. */
 .stagecard--reserve {
-  flex: 0 0 190px;
-  border-color: var(--edge);
+  padding: 8px 12px 10px;
+  height: 100%;
 }
 
 .stagecard--reserve .stagecard__name {
@@ -953,19 +976,5 @@ button {
   border-left: 1px solid var(--edge-soft);
 }
 
-/* Narrow windows: drop the side rails under the viewport rather than
-   squeezing them until the numbers wrap. */
-@media (max-width: 1180px) {
-  .shell {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(220px, 1fr) auto auto auto;
-    grid-template-areas:
-      "topbar"
-      "stage"
-      "rail"
-      "alerts"
-      "tabs";
-  }
-  .shell__rail { display: flex; gap: var(--gap); overflow-x: auto; }
-  .sys { margin-bottom: 0; min-width: 240px; }
-}
+/* No responsive breakpoints: the design space scales as one piece, which
+   is the point of it. A phone gets the same screen, smaller. */

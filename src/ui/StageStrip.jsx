@@ -16,12 +16,12 @@ const STAGE_ART = {
 };
 
 /**
- * The work units, in a strip under the set, with the reserve at the end —
- * the concept's bottom row.
+ * The work units, in a strip under the set: the concept's bottom row.
  *
- * The reserve belongs here rather than with the alert readouts because it
- * is the last link of the chain: everything to its left fills it, and the
- * Deity is paid out of it.
+ * The reserve is its own panel to the right of them, in the concept's own
+ * position for it, and belongs there rather than with the alert readouts
+ * because it is the last link of the chain — everything to its left fills
+ * it, and the Deity is paid out of it.
  */
 export function StageStrip() {
   const stages = useGameStore((s) => s.stages);
@@ -41,7 +41,6 @@ export function StageStrip() {
           jammed={stage.role === bottleneck}
         />
       ))}
-      <ReserveCard />
     </div>
   );
 }
@@ -89,7 +88,7 @@ function StageCard({ stage, blocked, jammed }) {
   );
 }
 
-function ReserveCard() {
+export function ReserveCard() {
   const reserves = useGameStore((s) => s.reserves);
   const reserveCapacity = useGameStore((s) => s.reserveCapacity);
   const targetRate = useGameStore((s) => s.targetRate);
@@ -101,7 +100,7 @@ function ReserveCard() {
 
   return (
     <div
-      className="stagecard stagecard--reserve"
+      className="panel stagecard--reserve"
       title={
         `Coin banked between the chain and the Deity.\n` +
         `Skimmed by law: ${taxedTotal.toFixed(1)} · stolen: ${stolenTotal.toFixed(1)}`

@@ -28,7 +28,7 @@ import os
 import shutil
 import subprocess
 import sys
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image
 
 SOURCE = "art-source"
 STILL = f"{SOURCE}/GoldChain.jpg"
@@ -38,36 +38,18 @@ OUT = "public/art"
 
 # --------------------------------------------------------------- backdrop
 #
-# The whole concept image is the backdrop, with the regions its own UI
-# occupied painted out. That is the trick that makes the artwork as big as
-# the window: our panels go where theirs were, and no art has to be
-# cropped to stay clear of them. The tight crop this replaced threw away
-# the MAFIA corner and half the temple.
+# The backdrop is the concept image, untouched.
 #
-# Each footprint is filled by stretching a thin slice of the art adjacent
-# to one of its edges, then blurring and dimming it. Two other fills were
-# tried first and both failed visibly:
+# Earlier versions painted over the regions the concept's own UI occupied,
+# because our panels didn't land on them: flat colour left dead bands,
+# mirroring duplicated the picket signs with reversed lettering, and a
+# stretched-slice smear left a visibly blurred band across the whole width
+# on any window that wasn't 1376x768.
 #
-#   flat colour — left a dead band wherever our responsive panels didn't
-#   land exactly on their fixed-layout footprint
-#
-#   mirroring the neighbouring art — duplicated the picket signs and the
-#   salary placard, reversed lettering and all
-#
-# A stretched slice smears into plausible depth instead, and since these
-# regions sit behind panels or under the vignette, plausible is enough.
-#
-# (box, which edge to take the slice from)
-CONCEPT_UI = [
-    ((228, 500, 1376, 708), "top"),     # stage strip and reserves
-    ((0, 688, 1376, 768), "top"),       # tab bar
-    ((0, 218, 242, 692), "right"),      # system rail
-    ((0, 0, 322, 220), "right"),        # brand plate and flow readout
-    ((1070, 52, 1376, 264), "left"),    # alert panel
-    ((1030, 0, 1376, 60), "bottom"),    # day, clock, speed, settings
-]
-
-SLICE = 10
+# All three were treating a layout problem as an image problem. The screen
+# is now a fixed 1376x768 design space scaled uniformly to the window (see
+# `--design-scale` in theme.css), so our panels sit exactly where theirs
+# do at every size, and there is nothing left to paint out.
 
 # Anchors for the state badges pinned on the backdrop, in concept pixels.
 # The mafia corner is deliberately absent: it sits under the right-hand
@@ -193,36 +175,6 @@ def optimise(paths):
     ]
 
 
-def build_backdrop(src):
-    """Paints out the concept's own UI."""
-    out = src.copy()
-    W, H = out.size
-
-    for (x0, y0, x1, y1), edge in CONCEPT_UI:
-        w, h = x1 - x0, y1 - y0
-        if edge == "top":
-            donor = out.crop((x0, y0 - SLICE, x1, y0))
-        elif edge == "bottom":
-            donor = out.crop((x0, y1, x1, y1 + SLICE))
-        elif edge == "right":
-            donor = out.crop((x1, y0, x1 + SLICE, y1))
-        else:
-            donor = out.crop((x0 - SLICE, y0, x0, y1))
-
-        donor = donor.resize((w, h), Image.BILINEAR)
-        donor = donor.filter(ImageFilter.GaussianBlur(9))
-        donor = donor.point(lambda v: int(v * 0.6))
-        out.paste(donor, (x0, y0))
-
-    # Soften the joins so the patches don't announce themselves.
-    seams = Image.new("L", (W, H), 0)
-    draw = ImageDraw.Draw(seams)
-    for box, _ in CONCEPT_UI:
-        draw.rectangle(box, outline=255, width=12)
-    seams = seams.filter(ImageFilter.GaussianBlur(8))
-    return Image.composite(out.filter(ImageFilter.GaussianBlur(5)), out, seams)
-
-
 def write_regions(src):
     """Emits the backdrop's aspect ratio and the hotspot anchors as
     percentages of the plate.
@@ -241,19 +193,16 @@ def write_regions(src):
         "// coordinates are percentages of the backdrop, derived from anchors",
         "// given in concept pixels, so the two cannot drift apart.",
         "//",
-        "// The backdrop is drawn `cover`, so a percentage of the image is not",
-        "// a percentage of the window: Backdrop.jsx does that conversion.",
+        "// The whole screen is this many pixels, scaled uniformly to the",
+        "// window, so these are also plain CSS pixels inside the design box.",
         "",
-        f"export const BACKDROP_ASPECT = {width} / {height};",
+        f"export const DESIGN = {{ width: {width}, height: {height} }};",
         "",
         "export const REGIONS = {",
     ]
     for name, (x, y, align) in HOTSPOTS.items():
-        px = 100 * x / width
-        py = 100 * y / height
         lines.append(
-            f'  {name}: {{ left: "{px:.1f}%", top: "{py:.1f}%", '
-            f'align: "{align}" }},'
+            f'  {name}: {{ left: {x}, top: {y}, align: "{align}" }},'
         )
     lines += ["};", ""]
 
@@ -277,7 +226,7 @@ def extract():
     src = Image.open(STILL).convert("RGB")
     written = []
 
-    build_backdrop(src).save(f"{OUT}/backdrop.jpg", quality=90)
+    src.save(f"{OUT}/backdrop.jpg", quality=92)
     written.append(f"{OUT}/backdrop.jpg")
 
     src.crop(DEITY).save(f"{OUT}/deity.jpg", quality=92)

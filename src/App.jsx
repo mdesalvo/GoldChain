@@ -1,12 +1,14 @@
 import "./ui/theme.css";
 import { useState } from "react";
-import { Backdrop } from "./ui/Backdrop.jsx";
-import { BrandPanel } from "./ui/BrandPanel.jsx";
-import { ClockBar } from "./ui/ClockBar.jsx";
+import { useGameStore } from "./state/useGameStore.js";
+import { Set } from "./ui/Set.jsx";
+import { useDesignScale } from "./ui/Screen.jsx";
+import { BrandPanel, FlowPanel } from "./ui/BrandPanel.jsx";
+import { ClockPanel, ControlPanel } from "./ui/ClockBar.jsx";
 import { AlertBox } from "./ui/AlertBox.jsx";
 import { FeedPanel } from "./ui/FeedPanel.jsx";
 import { SystemRail } from "./ui/SystemRail.jsx";
-import { StageStrip } from "./ui/StageStrip.jsx";
+import { StageStrip, ReserveCard } from "./ui/StageStrip.jsx";
 import { TabBar } from "./ui/TabBar.jsx";
 import { useGameLoop } from "./simulation/useGameLoop.js";
 import { ensureSeeded } from "./simulation/world.js";
@@ -26,46 +28,46 @@ fastForwardFromUrl();
 /**
  * The game screen.
  *
- * The painting is the whole window; every panel sits over it, in the place
- * the concept put it. That is what makes the artwork read as a set the
- * game happens inside rather than as an illustration in a box — and it is
- * the only layout in which the art gets the whole window instead of
- * whatever the side rails leave over.
+ * One fixed 1376x768 layout, scaled as a single piece to whatever window
+ * it is given. Every panel is absolutely positioned in concept pixels, on
+ * top of the concept artwork, in the place the concept put it — which is
+ * what lets our panels cover the UI painted into the picture instead of
+ * fighting it.
  *
  * Nothing animates. Everything that changes on screen is data being
- * written into a section by JavaScript.
+ * written into a panel by JavaScript.
  */
 export default function App() {
   const [showScene, setShowScene] = useState(false);
+  const scale = useDesignScale();
+  const flowMet = useGameStore((s) => s.flowMet);
   useGameLoop();
 
   return (
     <>
-      <Backdrop showScene={showScene} />
+      <div className="bleed" />
 
-      <div className="shell">
-        <div className="shell__brand">
-          <BrandPanel />
-        </div>
-        <div className="shell__clock">
-          <ClockBar
+      <div
+        className={`design${flowMet ? "" : " design--stalled"}`}
+        style={{ "--design-scale": scale }}
+      >
+        <Set showScene={showScene} />
+
+        <div className="at at--brand"><BrandPanel /></div>
+        <div className="at at--flow"><FlowPanel /></div>
+        <div className="at at--rail"><SystemRail /></div>
+        <div className="at at--clock"><ClockPanel /></div>
+        <div className="at at--ctrl">
+          <ControlPanel
             showScene={showScene}
             onToggleScene={() => setShowScene((on) => !on)}
           />
         </div>
-        <div className="shell__alert">
-          <AlertBox />
-          <FeedPanel />
-        </div>
-        <div className="shell__rail">
-          <SystemRail />
-        </div>
-        <div className="shell__strip">
-          <StageStrip />
-        </div>
-        <div className="shell__tabs">
-          <TabBar />
-        </div>
+        <div className="at at--alert"><AlertBox /></div>
+        <div className="at at--feed"><FeedPanel /></div>
+        <div className="at at--strip"><StageStrip /></div>
+        <div className="at at--purse"><ReserveCard /></div>
+        <div className="at at--tabs"><TabBar /></div>
       </div>
     </>
   );

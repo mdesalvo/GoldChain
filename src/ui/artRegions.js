@@ -4,16 +4,16 @@
 // coordinates are percentages of the backdrop, derived from anchors
 // given in concept pixels, so the two cannot drift apart.
 //
-// The backdrop is drawn `cover`, so a percentage of the image is not
-// a percentage of the window: Backdrop.jsx does that conversion.
+// The whole screen is this many pixels, scaled uniformly to the
+// window, so these are also plain CSS pixels inside the design box.
 
-export const BACKDROP_ASPECT = 1376 / 768;
+export const DESIGN = { width: 1376, height: 768 };
 
 export const REGIONS = {
-  union: { left: "26.5%", top: "26.0%", align: "center" },
-  politicians: { left: "63.7%", top: "26.0%", align: "center" },
-  hospital: { left: "61.4%", top: "41.7%", align: "center" },
-  police: { left: "75.6%", top: "52.1%", align: "right" },
-  mines: { left: "29.1%", top: "41.7%", align: "center" },
-  smelter: { left: "24.0%", top: "56.0%", align: "left" },
+  union: { left: 365, top: 200, align: "center" },
+  politicians: { left: 877, top: 200, align: "center" },
+  hospital: { left: 845, top: 320, align: "center" },
+  police: { left: 1040, top: 400, align: "right" },
+  mines: { left: 400, top: 320, align: "center" },
+  smelter: { left: 330, top: 430, align: "left" },
 };
