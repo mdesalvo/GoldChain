@@ -251,6 +251,7 @@ button {
 .sys__plate {
   position: absolute;
   inset: 0;
+  background-image: var(--plate);
   background-size: cover;
   background-position: center;
   opacity: 0.17;
@@ -443,6 +444,8 @@ button {
   max-height: 100%;
 }
 
+/* Shared by the still <img> and the animated <video>, so switching
+   between them cannot shift the framing the hotspots depend on. */
 .stage__plate {
   position: absolute;
   inset: 0;
@@ -505,6 +508,8 @@ button {
   margin: 8px 0 6px;
 }
 
+.deity picture { flex: 0 0 auto; }
+
 .deity img {
   width: 54px;
   border-radius: 5px;
@@ -559,9 +564,38 @@ button {
 
 .stagecard__art {
   height: 34px;
+  background-image: var(--plate);
   background-size: cover;
   background-position: center;
   opacity: 0.85;
+}
+
+/* The conveyor that carries the tribute up to the Deity, overlaid on the
+   still plate at the belt's own position. Its playback rate is driven by
+   the actual coin rate, so the belt slows as the flow does and stops dead
+   when the tribute stops — the one animation in the UI that is telling
+   you something rather than just moving. */
+.stage__belt {
+  position: absolute;
+  left: 51.9%;
+  top: 41%;
+  width: 3.5%;
+  height: 59%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+/* Anyone who has asked for less motion gets the stills. Every animated
+   asset has a same-named .jpg for exactly this. */
+@media (prefers-reduced-motion: reduce) {
+  .sys__plate,
+  .stagecard__art {
+    background-image: var(--plate-still);
+  }
+
+  .stage__belt {
+    display: none;
+  }
 }
 
 .stagecard__body { padding: 4px 7px 6px; }

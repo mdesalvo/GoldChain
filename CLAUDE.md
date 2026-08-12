@@ -179,21 +179,64 @@ Planned, not yet built:
 
 ## Art
 
-`public/art/` is cut directly from the concept image
-(`~/Desktop/GoldChain.jpg`) by hand-picked crop boxes: the
-cross-section backdrop, the Deity portrait, per-system plates (picket
-line, podium, hospital, police station, mafia corner), the five stage
-thumbnails, and the icon set (background keyed out to alpha).
+`public/art/` is generated — never edit it by hand. Run:
 
-The centre pane is a **painted backdrop with live overlays**, not a
-rendered scene. Hotspot positions in `Viewport.jsx` are percentages of
-that plate, which is why the plate is letterboxed at its exact aspect
-ratio rather than cropped to fill — cropping silently moves every
-hotspot off its room. If the backdrop is ever re-cropped, the region
-percentages have to be recomputed with it.
+```
+python3 scripts/extract-art.py
+```
+
+That script is the single source of truth for every crop box, and the
+boxes were all picked by eye against the artwork. Sources live in
+`art-source/` (the concept still and a 5.9s animated version of the same
+frame, same resolution, so one set of boxes serves both). They are
+deliberately *not* under `public/`, which is copied verbatim into the
+build and served.
+
+What comes out: the cross-section backdrop, the Deity portrait,
+per-system plates (picket line, podium, hospital, police station, mafia
+corner), five stage thumbnails, and 19 icons with the background keyed
+to alpha. ~1.5MB total.
+
+### The centre pane is a painted backdrop, not a rendered scene
+
+Hotspot positions in `Viewport.jsx` are percentages **of the backdrop
+crop**, which is why the plate is letterboxed at its exact aspect ratio
+rather than cropped to fill: cropping silently slides every hotspot off
+its room. Re-cropping the backdrop means recomputing those percentages.
+The animated backdrop uses the identical crop box for the same reason.
 
 The R3F scene is still the honest view of the simulation (every capsule
-is a real entity) and lives behind the viewport's 3D toggle.
+is a real entity) and is the third mode of the viewport's corner toggle.
+
+### What animates, and why not everything
+
+The clip is a continuous dolly *into* the set, so nothing in it loops on
+its own. Everything animated is either ping-ponged (forwards then
+backwards) or, for the conveyor, cut to its measured period.
+
+- **Per-component plates and stage thumbnails animate.** These are the
+  close-ups, which are the good part of the clip.
+- **The conveyor animates at the speed of the actual flow**, and stops
+  when the tribute stops. Its window is 9 frames because that is the
+  belt's measured period — one coin pitch. It is forward-only: a
+  ping-ponged conveyor runs its coins backwards half the time.
+- **The full backdrop is a mode, not the default.** The generative pass
+  garbled every sign in the set (MONKEY WORKERS UNION → "MUNKEY WURKERS
+  UNIUN", POLICE → "POLIOE") and dropped the Deity's salary placard with
+  the UI, so the still is the *more readable* backdrop even though it
+  doesn't move. That objection doesn't apply to the close-ups: at 17%
+  opacity behind text, or 34px tall, garbled signage is invisible.
+
+Every animated asset has a same-named `.jpg` still, used as the
+`prefers-reduced-motion` fallback via the `--plate` / `--plate-still`
+custom properties.
+
+Formats are chosen on measured size, which the script prints. For the
+backdrop: GIF 3945K, WebP 726K, WebM 211K. GIF is 256 colours a frame
+with no useful interframe compression, which on artwork this warm is the
+difference between megabytes and kilobytes — so nothing ships as GIF.
+The GIFs are still written, to `art-source/gif/`, because a README or a
+chat window will animate a GIF and will not animate a WebM.
 
 ## Working on this repo
 

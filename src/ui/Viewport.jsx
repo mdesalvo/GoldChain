@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../state/useGameStore.js";
 import { EVENT_TYPES } from "../events/eventTypes.js";
 import { ROLES } from "../simulation/world.js";
@@ -52,8 +52,22 @@ const STAGE_ART = {
   [ROLES.PAYER]: "delivery",
 };
 
+// Cycled by the button in the corner. The still is the default on
+// purpose: the animated plate is prettier but the generative pass garbled
+// every sign in the set and dropped the Deity's salary placard, so the
+// still is the more *readable* backdrop. Motion is never the default for
+// a second reason: a permanently moving background is a poor thing to
+// force on anyone who would rather it held still.
+const MODES = ["plate", "motion", "scene"];
+
+const MODE_LABEL = {
+  plate: { next: "Play the set", badge: "2D" },
+  motion: { next: "Show the live simulation", badge: "LIVE" },
+  scene: { next: "Back to the painted set", badge: "3D" },
+};
+
 export function Viewport() {
-  const [showScene, setShowScene] = useState(false);
+  const [mode, setMode] = useState("plate");
   const targetRate = useGameStore((s) => s.targetRate);
   const events = useGameStore((s) => s.activeEvents);
   const stages = useGameStore((s) => s.stages);
@@ -74,16 +88,31 @@ export function Viewport() {
           </span>
         </div>
 
-        {showScene ? (
+        {mode === "scene" ? (
           <Scene />
         ) : (
           <div className="stage__set">
-            <img
-              className="stage__plate"
-              src="/art/diorama.jpg"
-              alt="The society, in cross-section"
-              draggable={false}
-            />
+            {mode === "motion" ? (
+              /* Same crop box as the still, so the hotspots below land on
+                 the same rooms in either mode. */
+              <video
+                className="stage__plate"
+                src="/art/diorama.webm"
+                poster="/art/diorama.jpg"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <img
+                className="stage__plate"
+                src="/art/diorama.jpg"
+                alt="The society, in cross-section"
+                draggable={false}
+              />
+            )}
+            {mode === "plate" && <ConveyorBelt />}
             <div className="stage__vignette" />
             {hotspots(events, injured).map((spot) => (
               <div
@@ -102,14 +131,12 @@ export function Viewport() {
         <button
           type="button"
           className="tbtn stage__toggle"
-          onClick={() => setShowScene((on) => !on)}
-          title={
-            showScene
-              ? "Back to the painted set"
-              : "Show the live 3D simulation instead"
+          onClick={() =>
+            setMode((current) => MODES[(MODES.indexOf(current) + 1) % MODES.length])
           }
+          title={MODE_LABEL[mode].next}
         >
-          {showScene ? "2D" : "3D"}
+          {MODE_LABEL[mode].badge}
         </button>
       </div>
 
@@ -124,6 +151,49 @@ export function Viewport() {
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * The conveyor belt, overlaid on the still plate and driven by the actual
+ * tribute rate.
+ *
+ * Playback rate rather than a CSS animation because the belt is real
+ * footage, and rather than a fixed loop because a belt that always moves
+ * at the same speed while the flow collapses is actively misleading. Kept
+ * in its own component so the 15Hz rate updates re-render this and
+ * nothing else.
+ */
+function ConveyorBelt() {
+  const currentRate = useGameStore((s) => s.currentRate);
+  const targetRate = useGameStore((s) => s.targetRate);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+
+    const ratio = targetRate > 0 ? currentRate / targetRate : 0;
+    if (ratio < 0.02) {
+      video.pause();
+      return;
+    }
+    // Clamped: below a quarter speed the coins judder, above double they
+    // blur into a stripe.
+    video.playbackRate = Math.max(0.25, Math.min(2, ratio));
+    if (video.paused) video.play().catch(() => {});
+  }, [currentRate, targetRate]);
+
+  return (
+    <video
+      ref={ref}
+      className="stage__belt"
+      src="/art/belt.webm"
+      autoPlay
+      muted
+      loop
+      playsInline
+    />
   );
 }
 
@@ -212,7 +282,10 @@ function StageCard({ stage, blocked, jammed }) {
     >
       <div
         className="stagecard__art"
-        style={{ backgroundImage: `url(/art/stage/${STAGE_ART[stage.role]}.jpg)` }}
+        style={{
+          "--plate": `url(/art/stage/${STAGE_ART[stage.role]}.webp)`,
+          "--plate-still": `url(/art/stage/${STAGE_ART[stage.role]}.jpg)`,
+        }}
       />
       <div className="stagecard__body">
         <div className="stagecard__name">{stage.role}</div>

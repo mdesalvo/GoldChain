@@ -160,7 +160,12 @@ function SystemCard({
       {plate && (
         <div
           className="sys__plate"
-          style={{ backgroundImage: `url(/art/${plateDir}/${plate}.jpg)` }}
+          style={{
+            // Animated plate, with the still as the reduced-motion
+            // fallback. The CSS picks between them.
+            "--plate": `url(/art/${plateDir}/${plate}.webp)`,
+            "--plate-still": `url(/art/${plateDir}/${plate}.jpg)`,
+          }}
         />
       )}
 

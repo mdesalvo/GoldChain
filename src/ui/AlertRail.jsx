@@ -73,7 +73,12 @@ export function AlertRail() {
               )}.${bottleneck ? ` The jam is at the ${bottleneck}.` : ""}`}
         </div>
         <div className="deity">
-          <img src="/art/deity.jpg" alt="The Celebrity Deity" />
+          {/* Animated WebP: same <img> as a GIF, a fifth of the weight.
+              The still is the fallback for anything that can't decode it. */}
+          <picture>
+            <source srcSet="/art/deity.webp" type="image/webp" />
+            <img src="/art/deity.jpg" alt="The Celebrity Deity" />
+          </picture>
           <div>
             <div className="deity__label">Deity mood</div>
             <div className="deity__value" style={{ color: MOOD_COLORS[mood] }}>
