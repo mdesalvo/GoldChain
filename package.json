@@ -2,7 +2,7 @@
   "name": "goldchain",
   "version": "0.1.0",
   "private": true,
-  "description": "GoldChain \u2014 a satirical 3D idle/tycoon game where a monkey society exists to mint one coin per second for a deified celebrity.",
+  "description": "GoldChain — a satirical 3D idle/tycoon game where a monkey society exists to mint one coin per second for a deified celebrity.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,13 +13,13 @@
   "dependencies": {
     "miniplex": "^2.0.0",
     "miniplex-react": "^2.0.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "xstate": "^5.32.5",
-    "zustand": "^4.5.5"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.2",
-    "vite": "^5.4.8"
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.1"
   }
 }
