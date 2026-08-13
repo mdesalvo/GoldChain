@@ -2,6 +2,7 @@ import { useGameStore } from "../state/useGameStore.js";
 import { wrathLevel, WRATH } from "../simulation/deity.js";
 import { ROLES, STAGE_LABEL } from "../simulation/world.js";
 import { Icon, Meter } from "./parts.jsx";
+import { ART_BASE } from "./artRegions.js";
 
 const MOOD_LABELS = {
   [WRATH.DELIGHTED]: "Delighted",
@@ -88,7 +89,7 @@ export function AlertBox() {
         style={{ "--mood": MOOD_COLORS[mood] }}
         title="Mood tracks one thing only: whether the tribute is arriving at the demanded rate. Nothing else in the society enters into it — not injuries, not strikes, not who died in the mine. It recovers steadily while flow is met and decays faster than proportionally the longer it falls short."
       >
-        <img src="/art/deity.jpg" alt="The Celebrity Deity" />
+        <img src={`${ART_BASE}deity.jpg`} alt="The Celebrity Deity" />
         <div>
           <div className="deity__label">Deity mood</div>
           <div className="deity__value" style={{ color: MOOD_COLORS[mood] }}>

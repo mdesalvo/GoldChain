@@ -1,6 +1,7 @@
 import { useGameStore } from "../state/useGameStore.js";
 import { EVENT_TYPES } from "../events/eventTypes.js";
 import { ActionButton, Icon, Meter, pickActions, Popup } from "./parts.jsx";
+import { ART_BASE } from "./artRegions.js";
 
 // Where an engine-generated notification (a strike/law/raid transition,
 // an injury) puts it — there's no button to anchor these to, so they
@@ -227,7 +228,7 @@ function SystemCard({
         <>
           <div
             className="sys__plate"
-            style={{ "--plate": `url(/art/${plateDir}/${plate}.jpg)` }}
+            style={{ "--plate": `url(${ART_BASE}${plateDir}/${plate}.jpg)` }}
           />
           <div className="sys__wash" />
         </>

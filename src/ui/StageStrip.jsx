@@ -1,6 +1,7 @@
 import { useGameStore } from "../state/useGameStore.js";
 import { ROLES, STAGE_LABEL } from "../simulation/world.js";
 import { ActionButton, Icon, pickActions } from "./parts.jsx";
+import { ART_BASE } from "./artRegions.js";
 
 export { STAGE_LABEL };
 
@@ -116,7 +117,7 @@ function StageCard({ stage, blocked, jammed, hint }) {
       )}
       <div
         className="stagecard__art"
-        style={{ "--plate": `url(/art/stage/${STAGE_ART[stage.role]}.jpg)` }}
+        style={{ "--plate": `url(${ART_BASE}stage/${STAGE_ART[stage.role]}.jpg)` }}
       />
       <div className="stagecard__body">
         <div className="stagecard__name">

@@ -7,6 +7,7 @@ import { AlertBox } from "./ui/AlertBox.jsx";
 import { SystemRail } from "./ui/SystemRail.jsx";
 import { StageStrip, ReserveCard } from "./ui/StageStrip.jsx";
 import { NewsTicker } from "./ui/NewsTicker.jsx";
+import { ART_BASE } from "./ui/artRegions.js";
 import { useGameLoop } from "./simulation/useGameLoop.js";
 import { ensureSeeded } from "./simulation/world.js";
 import {
@@ -44,7 +45,10 @@ export default function App() {
 
   return (
     <>
-      <div className="bleed" />
+      <div
+        className="bleed"
+        style={{ backgroundImage: `url(${ART_BASE}backdrop2.jpg)` }}
+      />
 
       <div
         className={`design${flowMet ? "" : " design--stalled"}`}

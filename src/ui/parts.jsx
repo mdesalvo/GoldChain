@@ -1,4 +1,5 @@
 import { invokeAction } from "../simulation/playerActions.js";
+import { ART_BASE } from "./artRegions.js";
 
 /**
  * Shared UI primitives.
@@ -12,7 +13,7 @@ export function Icon({ name, size, alt = "" }) {
   return (
     <img
       className={`icon${size ? ` icon--${size}` : ""}`}
-      src={`/art/icons/${name}.png`}
+      src={`${ART_BASE}icons/${name}.png`}
       alt={alt}
       draggable={false}
     />

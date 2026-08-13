@@ -93,7 +93,10 @@ button {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: url("/art/backdrop2.jpg") center / cover no-repeat;
+  /* background-image is set inline (App.jsx) via import.meta.env.BASE_URL —
+     a hardcoded url() here can't resolve when the app is served from a
+     subpath (e.g. itch.io's HTML embed). */
+  background: center / cover no-repeat;
   filter: blur(46px) brightness(0.3) saturate(0.8);
   transform: scale(1.12);
 }

@@ -10,6 +10,22 @@
 // The whole screen is this many pixels, scaled uniformly to the
 // window, so these are also plain CSS pixels inside the design box.
 
+// Root-relative "/art/..." paths break once the app is served from a
+// subpath (e.g. itch.io's HTML embed), because Vite's `base` only
+// rewrites assets it processes itself, not raw strings in JS/CSS.
+// BASE_URL is already resolved against `base` at build time, but it's
+// still relative ("./") — fine for a plain <img src>, which resolves
+// against the document, but not for a url() stashed in a CSS custom
+// property and read back via var() from an externally-linked
+// stylesheet: the spec resolves that relative to the *stylesheet's*
+// location (assets/), not the page's, so it 404s one directory too
+// deep. Resolving to an absolute URL up front sidesteps the ambiguity
+// everywhere ART_BASE is used.
+export const ART_BASE = new URL(
+  `${import.meta.env.BASE_URL}art/`,
+  document.baseURI
+).href;
+
 export const DESIGN = { width: 1376, height: 768 };
 
 export const REGIONS = {

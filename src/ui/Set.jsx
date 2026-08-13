@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useGameStore } from "../state/useGameStore.js";
 import { EVENT_TYPES } from "../events/eventTypes.js";
 import { ROLES } from "../simulation/world.js";
-import { REGIONS } from "./artRegions.js";
+import { ART_BASE, REGIONS } from "./artRegions.js";
 
 /**
  * The set: the concept painting, untouched, filling the design space.
@@ -32,7 +32,7 @@ export function Set() {
     <>
       <img
         className="design__art"
-        src="/art/backdrop2.jpg"
+        src={`${ART_BASE}backdrop2.jpg`}
         alt="The society, in cross-section: the Deity above, the chain below"
         draggable={false}
       />
