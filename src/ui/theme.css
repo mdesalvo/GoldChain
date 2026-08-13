@@ -161,9 +161,14 @@ button {
 .at--alert  { left: 1066px; top: 60px;  width: 332px; height: 192px; }
 .at--strip  { left: 270px;  top: 526px; width: 788px; height: 186px; }
 .at--purse  { left: 1066px; top: 526px; width: 332px; height: 186px; }
+/* Right edge matches the reserve card's (1066+332), not the nominal
+   1376px design width — .at--purse already runs 22px past it, and a
+   ticker that stopped short of it would visibly not reach the edge
+   the eye expects it to. */
+.at--ticker { left: 266px;  top: 712px; width: 1132px; height: 40px !important; }
 
 .at--brand > *, .at--flow > *,
-.at--alert, .at--purse > * { height: 100%; }
+.at--alert, .at--purse > *, .at--ticker { height: 100%; }
 
 .at--rail::-webkit-scrollbar { width: 5px; }
 .at--rail::-webkit-scrollbar-thumb {
@@ -633,6 +638,66 @@ button {
   bottom: 12px;
 }
 
+/* -------------------------------------------------------- news ticker */
+
+/* A newsroom chyron along the bottom edge — the one place in the design
+   space the concept's own painting left empty below the stage strip.
+   The crawl itself is driven from NewsTicker.jsx (a small rAF loop
+   writing a `transform`), not from CSS — see the note there for why. */
+.ticker {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 10px 10px;
+}
+
+.ticker__label {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 12px;
+  border-right: 1px solid var(--edge-soft);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.ticker__window {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.ticker__track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-right: 42px;
+}
+
+.ticker__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--source, var(--gold));
+  box-shadow: 0 0 5px 1px var(--source, var(--gold));
+  flex: 0 0 auto;
+}
+
 /* --------------------------------------------------------- stage strip */
 
 /* Eight work units across 904 design pixels, as tall as the five painted
@@ -649,6 +714,7 @@ button {
    hairline to seat it, a scrim under the text, and a lift on hover for
    the player who wants a closer look. */
 .stagecard {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
   display: flex;
@@ -682,6 +748,25 @@ button {
 .stagecard--dead .stagecard__art {
   filter: saturate(0.25) brightness(0.62);
 }
+
+/* Which system is behind the stage's current state — independent of
+   the jam/dead border above, which only says *that* something is
+   wrong, not *who*. */
+.stagecard__hint {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  z-index: 1;
+  box-shadow: 0 0 5px 1px currentColor, 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.stagecard__hint--union     { background: var(--union);     color: var(--union); }
+.stagecard__hint--breakdown { background: var(--warn);      color: var(--warn); }
+.stagecard__hint--mafia     { background: var(--mafia);     color: var(--mafia); }
+.stagecard__hint--medical   { background: var(--medical);   color: var(--medical); }
 
 /* Grows to fill the card, so the strip matches the height of the cards
    painted into the picture underneath it without leaving dead space. */

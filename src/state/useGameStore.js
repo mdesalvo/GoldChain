@@ -14,6 +14,11 @@ import { create } from "zustand";
 const NOTIFICATION_TTL = 5;
 let notificationId = 0;
 
+// The news ticker only ever shows the last handful of headlines, but it
+// keeps a short backlog so a quiet moment right after a burst of events
+// doesn't leave it blank while it waits for the next one.
+const NEWS_LOG_LIMIT = 20;
+
 export const useGameStore = create((set) => ({
   // --- Core tribute loop ---
   coinsDelivered: 0,
@@ -42,9 +47,19 @@ export const useGameStore = create((set) => ({
   // machine, carrying its current state and a human-readable summary.
   activeEvents: [],
   notifications: [],
+  // Every notification ever pushed, oldest first, capped at
+  // NEWS_LOG_LIMIT — unlike `notifications` this never expires on its
+  // own, so the ticker always has a backlog to scroll through even for
+  // the things that have no card to land a popup on (a breakdown, the
+  // Deity's own moods).
+  newsLog: [],
   // Per-stage buffers and headcount, for the chain readout in the HUD.
   stages: [],
   bottleneck: null,
+  // Per-role cause dot for the stage strip: role -> "union" | "breakdown"
+  // | "mafia" | "medical". Separate from bottleneck/blockedRoles, which
+  // drive the card's border — this says *why*.
+  roleHints: {},
   injuredCount: 0,
   // Coin banked between the chain and the Deity. The tribute is paid
   // out of here, which is why a stoppage upstream is survivable.
@@ -139,7 +154,10 @@ export const useGameStore = create((set) => ({
       id: ++notificationId,
       ttl: NOTIFICATION_TTL,
     }));
-    set((s) => ({ notifications: [...s.notifications, ...stamped] }));
+    set((s) => ({
+      notifications: [...s.notifications, ...stamped],
+      newsLog: [...s.newsLog, ...stamped].slice(-NEWS_LOG_LIMIT),
+    }));
   },
 
   /** Counts every live notification down; each card only ever sees the

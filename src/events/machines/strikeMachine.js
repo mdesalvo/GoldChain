@@ -194,6 +194,7 @@ export function describeStrike(snapshot) {
         label: "Strike",
         detail: `${blockedRoles.join(", ")} have walked out.`,
         severity: severity + 1,
+        roles: blockedRoles,
       };
     case "negotiating":
       return {
@@ -203,6 +204,10 @@ export function describeStrike(snapshot) {
           Math.round((progress / NEGOTIATION_WORK) * 100)
         )}% agreed.`,
         severity: 1,
+        // Most of the chain has drifted back to work by now; only the
+        // stage that started it still holds the line (mirrors
+        // strikeModifiers' blockedRoles for this state).
+        roles: blockedRoles.slice(0, 1),
       };
     case "resolved":
       return { label: "Strike settled", detail: "Back to work.", severity: 0 };

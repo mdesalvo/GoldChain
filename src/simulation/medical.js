@@ -105,6 +105,13 @@ export function stepMedical(dt, { workerWellbeing = 70, hazardMultiplier = 1 } =
   return result;
 }
 
+/** Pipeline roles that currently have at least one worker in hospital. */
+export function injuredRoleSet() {
+  const roles = new Set();
+  for (const e of queries.injured()) roles.add(e.role);
+  return roles;
+}
+
 /** Fraction of the pipeline workforce currently out of action. */
 export function injuredFraction() {
   let injured = 0;

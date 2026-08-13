@@ -40,10 +40,20 @@ const STAGE_ICON = {
  * because it is the last link of the chain — everything to its left fills
  * it, and the Deity is paid out of it.
  */
+// One line per cause, in the same words the notification feed uses for
+// that system, so the dot and the feed never disagree with each other.
+const HINT_LABEL = {
+  union: "The union is behind this — a walkout here.",
+  breakdown: "Machinery seized up on this line.",
+  mafia: "The mafia siphoned gold out of this stage's buffer.",
+  medical: "A worker from this stage is in hospital.",
+};
+
 export function StageStrip() {
   const stages = useGameStore((s) => s.stages);
   const blockedRoles = useGameStore((s) => s.blockedRoles);
   const bottleneck = useGameStore((s) => s.bottleneck);
+  const roleHints = useGameStore((s) => s.roleHints);
 
   if (stages.length === 0) return null;
   const blocked = new Set(blockedRoles);
@@ -56,13 +66,14 @@ export function StageStrip() {
           stage={stage}
           blocked={blocked.has(stage.role)}
           jammed={stage.role === bottleneck}
+          hint={roleHints[stage.role]}
         />
       ))}
     </div>
   );
 }
 
-function StageCard({ stage, blocked, jammed }) {
+function StageCard({ stage, blocked, jammed, hint }) {
   const fill = stage.capacity ? Math.min(1, stage.buffer / stage.capacity) : 1;
   const className = [
     "stagecard",
@@ -82,6 +93,12 @@ function StageCard({ stage, blocked, jammed }) {
         `\nrunning at ${Math.round(stage.load * 100)}% of capacity`
       }
     >
+      {hint && (
+        <span
+          className={`stagecard__hint stagecard__hint--${hint}`}
+          title={HINT_LABEL[hint]}
+        />
+      )}
       <div
         className="stagecard__art"
         style={{ "--plate": `url(/art/stage/${STAGE_ART[stage.role]}.jpg)` }}

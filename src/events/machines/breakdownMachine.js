@@ -142,6 +142,7 @@ export function describeBreakdown(snapshot) {
         label: "Breakdown",
         detail: `${stage} equipment has seized up.`,
         severity: 2,
+        roles: [stage],
       };
     case "repairing":
       return {
@@ -151,6 +152,7 @@ export function describeBreakdown(snapshot) {
           Math.round((repairProgress / REPAIR_WORK) * 100)
         )}% repaired.`,
         severity: 1,
+        roles: [stage],
       };
     default:
       return {

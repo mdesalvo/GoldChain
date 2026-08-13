@@ -207,6 +207,7 @@ export function stepPipeline(dt, modifiers = {}) {
   // (mafia intercepts shipments) rather than the final coin count,
   // to keep the "coins delivered" ledger honest.
   let stolen = 0;
+  const stolenFrom = [];
   if (corruptionDrain > 0) {
     let remaining = corruptionDrain * dt;
     // Take from the fattest buffers first — thieves go where the gold
@@ -222,6 +223,7 @@ export function stepPipeline(dt, modifiers = {}) {
       stageBuffers[role] -= take;
       remaining -= take;
       stolen += take;
+      stolenFrom.push(role);
     }
   }
 
@@ -240,6 +242,7 @@ export function stepPipeline(dt, modifiers = {}) {
     coins: withdrawn - taxed,
     taxed,
     stolen,
+    stolenFrom,
     produced,
     bottleneck: blockedBottleneck ?? limiter,
   };

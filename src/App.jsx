@@ -6,6 +6,7 @@ import { BrandPanel, FlowPanel } from "./ui/BrandPanel.jsx";
 import { AlertBox } from "./ui/AlertBox.jsx";
 import { SystemRail } from "./ui/SystemRail.jsx";
 import { StageStrip, ReserveCard } from "./ui/StageStrip.jsx";
+import { NewsTicker } from "./ui/NewsTicker.jsx";
 import { useGameLoop } from "./simulation/useGameLoop.js";
 import { ensureSeeded } from "./simulation/world.js";
 import {
@@ -30,8 +31,11 @@ fastForwardFromUrl();
  * what lets our panels cover the UI painted into the picture instead of
  * fighting it.
  *
- * Nothing animates. Everything that changes on screen is data being
- * written into a panel by JavaScript.
+ * Nothing animates, with one deliberate exception: the news ticker at
+ * the bottom is a CSS crawl, not a loop the simulation drives — the
+ * fixed-tick loop only ever changes what text is inside it. Everything
+ * else that changes on screen is data being written into a panel by
+ * JavaScript.
  */
 export default function App() {
   const scale = useDesignScale();
@@ -54,6 +58,7 @@ export default function App() {
         <div className="at at--alert"><AlertBox /></div>
         <div className="at at--strip"><StageStrip /></div>
         <div className="at at--purse"><ReserveCard /></div>
+        <div className="at at--ticker"><NewsTicker /></div>
       </div>
     </>
   );

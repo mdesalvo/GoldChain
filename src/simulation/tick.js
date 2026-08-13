@@ -5,11 +5,12 @@ import {
   pipelineSnapshot,
   treasury,
 } from "./pipeline.js";
-import { stepMedical, treatmentCapacity } from "./medical.js";
+import { stepMedical, treatmentCapacity, injuredRoleSet } from "./medical.js";
 import { stepSociety } from "./society.js";
 import { stepDeity, maybeUnleashWrath } from "./deity.js";
 import { eventsEngine } from "../events/eventsEngine.js";
 import { stepActionCooldowns, actionSnapshot } from "./playerActions.js";
+import { EVENT_TYPES } from "../events/eventTypes.js";
 
 /**
  * One simulation tick, and the throttled HUD snapshot that goes with it.
@@ -58,7 +59,7 @@ export function stepSimulation(dt) {
 
   // 4. The economy. Everything above only reaches gold through here.
   const wellbeingFactor = 0.5 + store.workerWellbeing / 200; // 0.5..1.0
-  const { coins, taxed, stolen, bottleneck } = stepPipeline(dt, {
+  const { coins, taxed, stolen, stolenFrom, bottleneck } = stepPipeline(dt, {
     wellbeingFactor,
     throughputMultiplier: modifiers.throughputMultiplier,
     corruptionDrain: modifiers.corruptionDrain,
@@ -68,6 +69,7 @@ export function stepSimulation(dt) {
   });
 
   lastEngineFrame.bottleneck = bottleneck;
+  lastEngineFrame.stolenFrom = stolenFrom;
 
   if (coins > 0) store.deliverCoin(coins);
   if (taxed > 0 || stolen > 0) store.recordSkim({ taxed, stolen });
@@ -119,6 +121,34 @@ export function stepSimulation(dt) {
   store.decayNotifications(dt);
 }
 
+/**
+ * Which system, if any, is currently the reason a given pipeline role
+ * needs attention — one colour dot per stage card, distinct from the
+ * bottleneck (yellow) and blocked (red) borders those cards already
+ * carry. Priority order (a role can only show one dot at a time):
+ * a walkout or a seized machine is the stage's whole story for the
+ * tick, mid-chain theft is the next most urgent, and a hospitalised
+ * worker is the quietest of the four.
+ */
+function buildRoleHints(events, stolenFrom) {
+  const byType = Object.fromEntries(events.map((e) => [e.type, e]));
+  const hints = {};
+
+  for (const role of byType[EVENT_TYPES.STRIKE]?.roles ?? []) {
+    hints[role] = "union";
+  }
+  for (const role of byType[EVENT_TYPES.BREAKDOWN]?.roles ?? []) {
+    hints[role] ??= "breakdown";
+  }
+  for (const role of stolenFrom) {
+    hints[role] ??= "mafia";
+  }
+  for (const role of injuredRoleSet()) {
+    hints[role] ??= "medical";
+  }
+  return hints;
+}
+
 export function publishSnapshot() {
   const store = useGameStore.getState();
   const { events } = lastEngineFrame;
@@ -126,6 +156,7 @@ export function publishSnapshot() {
     activeEvents: events,
     stages: pipelineSnapshot(),
     bottleneck: lastEngineFrame.bottleneck,
+    roleHints: buildRoleHints(events, lastEngineFrame.stolenFrom),
     injuredCount: lastEngineFrame.injuredCount,
     // Published rather than read live so the viewport can react to the
     // tribute failing without re-rendering at the 15Hz rate.
@@ -145,6 +176,7 @@ export function publishSnapshot() {
 const lastEngineFrame = {
   events: [],
   bottleneck: null,
+  stolenFrom: [],
   injuredCount: 0,
   treatmentCapacity: 0,
   siphonRate: 0,
