@@ -1,5 +1,6 @@
 import { useGameStore } from "../state/useGameStore.js";
 import { wrathLevel, WRATH } from "../simulation/deity.js";
+import { ROLES, STAGE_LABEL } from "../simulation/world.js";
 import { Icon, Meter } from "./parts.jsx";
 
 const MOOD_LABELS = {
@@ -34,25 +35,44 @@ export function AlertBox() {
   const bottleneck = useGameStore((s) => s.bottleneck);
   const streakSeconds = useGameStore((s) => s.streakSeconds);
   const coinsDelivered = useGameStore((s) => s.coinsDelivered);
+  const blockedRoles = useGameStore((s) => s.blockedRoles);
+  const reserves = useGameStore((s) => s.reserves);
 
   const mood = wrathLevel(deityMood);
   const wrath = Math.max(0, Math.min(100, 100 - deityMood));
 
+  // The reserve insulates the Deity from every other stage stalling —
+  // but Delivery is the one link with nothing after it to absorb a
+  // stall of its own: the belt jamming backs the whole chain up
+  // behind it, tick by tick, well before the reserve itself runs
+  // low enough for the Deity to ever notice. Flow is still "met" in
+  // that narrow sense, so this sits between calm and the full red
+  // crisis rather than under either.
+  const deliveryJammed = blockedRoles.includes(ROLES.PAYER);
+  const atRisk = flowMet && deliveryJammed;
+  const panelClass = !flowMet ? "" : atRisk ? " alert--warn" : " alert--calm";
+
   return (
-    <div className={`panel alert${flowMet ? " alert--calm" : ""}`}>
+    <div className={`panel alert${panelClass}`}>
       <div className="alert__head">
         <Icon name="bolt" size="sm" alt="" />
-        {flowMet ? "Flow nominal" : "Flow interrupted!"}
+        {!flowMet ? "Flow interrupted!" : atRisk ? "Delivery jammed!" : "Flow nominal"}
       </div>
 
       <div className="alert__body">
-        {flowMet
-          ? `Tribute has been arriving for ${streakSeconds.toFixed(0)}s. ` +
-            `${coinsDelivered.toFixed(0)} coins delivered so far.`
-          : `The Deity is receiving ${currentRate.toFixed(
+        {!flowMet
+          ? `The Deity is receiving ${currentRate.toFixed(
               3
             )} of ${targetRate.toFixed(3)}.` +
-            (bottleneck ? ` The jam is at the ${bottleneck}.` : "")}
+            (bottleneck ? ` The jam is at ${STAGE_LABEL[bottleneck]}.` : "")
+          : atRisk
+          ? `Delivery's conveyor has stopped. Gold is backing up the whole ` +
+            `chain behind it, stage by stage — the reserve (${reserves.toFixed(
+              1
+            )} banked) is covering the Deity for now, but nothing is ` +
+            `refilling it. Settle it at the Union before that runs out.`
+          : `Tribute has been arriving for ${streakSeconds.toFixed(0)}s. ` +
+            `${coinsDelivered.toFixed(0)} coins delivered so far.`}
       </div>
 
       <Meter
@@ -60,9 +80,14 @@ export function AlertBox() {
         value={wrath}
         color={wrath > 60 ? "var(--bad)" : "var(--warn)"}
         format={(v) => `${Math.round(v)}%`}
+        title="100 minus the Deity's mood. At rock bottom it triggers Wrath: a burst of relief for the Deity's own mood, paid for by worker wellbeing and political stability — never by the quota, and never by the Deity."
       />
 
-      <div className="deity" style={{ "--mood": MOOD_COLORS[mood] }}>
+      <div
+        className="deity"
+        style={{ "--mood": MOOD_COLORS[mood] }}
+        title="Mood tracks one thing only: whether the tribute is arriving at the demanded rate. Nothing else in the society enters into it — not injuries, not strikes, not who died in the mine. It recovers steadily while flow is met and decays faster than proportionally the longer it falls short."
+      >
         <img src="/art/deity.jpg" alt="The Celebrity Deity" />
         <div>
           <div className="deity__label">Deity mood</div>

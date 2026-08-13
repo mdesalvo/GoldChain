@@ -1,6 +1,8 @@
 import { assign, createMachine } from "xstate";
-import { PIPELINE_ORDER } from "../../simulation/world.js";
+import { PIPELINE_ORDER, STAGE_LABEL } from "../../simulation/world.js";
 import { randomInt } from "../../simulation/rng.js";
+
+const stageNames = (roles) => roles.map((r) => STAGE_LABEL[r]).join(", ");
 
 /**
  * Strike: brewing -> active -> negotiating -> resolved
@@ -192,7 +194,7 @@ export function describeStrike(snapshot) {
     case "active":
       return {
         label: "Strike",
-        detail: `${blockedRoles.join(", ")} have walked out.`,
+        detail: `${stageNames(blockedRoles)} have walked out.`,
         severity: severity + 1,
         roles: blockedRoles,
       };
@@ -262,7 +264,7 @@ export function strikeTransition(from, to, context) {
   if (to === "active") {
     return {
       tone: "bad",
-      message: `STRIKE: ${context.blockedRoles.join(", ")} have downed tools.`,
+      message: `STRIKE: ${stageNames(context.blockedRoles)} have downed tools.`,
     };
   }
   if (to === "negotiating") {

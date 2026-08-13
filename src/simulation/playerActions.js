@@ -31,6 +31,15 @@ import { eventsEngine } from "../events/eventsEngine.js";
  * layer into the upgrade tree the design explicitly rejects.
  */
 
+// Every role reads fine as "a ${role}" in a sentence except the payer —
+// the UI never calls that stage anything but "Delivery" (see
+// STAGE_LABEL in StageStrip.jsx), so a notification saying "payer"
+// looks like a role that got cut, not the one conveyor-belt worker it
+// actually is. Not "delivery hand" either: nobody hands the Deity
+// anything in person (see STAGE_DESCRIPTION[PAYER]).
+const ROLE_NOUN = { [ROLES.PAYER]: "conveyor operator" };
+const roleNoun = (role) => ROLE_NOUN[role] ?? role;
+
 /**
  * Reassignment goes through remove + add rather than mutating `role` in
  * place, because miniplex only re-evaluates the cached role buckets when
@@ -200,7 +209,7 @@ export const ACTIONS = [
       if (!from || !reassign(from, ROLES.NURSE)) return null;
       return {
         tone: "good",
-        message: `A ${from} retrained as a nurse. Treatment capacity now ${Math.round(
+        message: `A ${roleNoun(from)} retrained as a nurse. Treatment capacity now ${Math.round(
           treatmentCapacity()
         )}.`,
       };
@@ -220,7 +229,7 @@ export const ACTIONS = [
       if (!from || !reassign(from, ROLES.POLICE)) return null;
       return {
         tone: "good",
-        message: `A ${from} took the badge. ${ableWorkerCount(
+        message: `A ${roleNoun(from)} took the badge. ${ableWorkerCount(
           ROLES.POLICE
         )} officers on duty.`,
       };
@@ -240,7 +249,7 @@ export const ACTIONS = [
       if (!from || !reassign(from, ROLES.UNIONIZER)) return null;
       return {
         tone: "good",
-        message: `A ${from} joined the union office.`,
+        message: `A ${roleNoun(from)} joined the union office.`,
       };
     },
   },
@@ -269,7 +278,7 @@ export const ACTIONS = [
       if (!reassign(from, target)) return null;
       return {
         tone: "warn",
-        message: `A ${from} was reassigned to ${target}. Resilience traded for throughput.`,
+        message: `A ${roleNoun(from)} was reassigned to ${roleNoun(target)}. Resilience traded for throughput.`,
       };
     },
   },

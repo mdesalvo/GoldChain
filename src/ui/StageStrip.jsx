@@ -1,24 +1,16 @@
 import { useGameStore } from "../state/useGameStore.js";
-import { ROLES } from "../simulation/world.js";
+import { ROLES, STAGE_LABEL } from "../simulation/world.js";
 import { ActionButton, Icon, pickActions } from "./parts.jsx";
 
-// One plate per stage, and one label — the concept names its bottom row
-// by the place (MINES, SMELTERS, TRANSPORT, MINTS, DELIVERY), not by the
-// worker's job title, so the card shows that rather than `stage.role`.
+export { STAGE_LABEL };
+
+// One plate per stage, keyed the same way STAGE_LABEL is.
 const STAGE_ART = {
   [ROLES.MINER]: "mines",
   [ROLES.TRANSPORTER]: "transport",
   [ROLES.SMELTER]: "smelters",
   [ROLES.MINTER]: "mints",
   [ROLES.PAYER]: "delivery",
-};
-
-const STAGE_LABEL = {
-  [ROLES.MINER]: "Mines",
-  [ROLES.TRANSPORTER]: "Transport",
-  [ROLES.SMELTER]: "Smelters",
-  [ROLES.MINTER]: "Mints",
-  [ROLES.PAYER]: "Delivery",
 };
 
 // The concept marks each stage with a small glyph next to its name, the
@@ -30,6 +22,16 @@ const STAGE_ICON = {
   [ROLES.SMELTER]: "flame",
   [ROLES.MINTER]: "coinstage",
   [ROLES.PAYER]: "delivery",
+};
+
+// What each specialisation actually does, first line of the card's
+// tooltip — the stats below it say how well, this says what.
+const STAGE_DESCRIPTION = {
+  [ROLES.MINER]: "Miners extract raw gold from the mountain.",
+  [ROLES.TRANSPORTER]: "Transporters haul the gold from the mines to the smelters.",
+  [ROLES.SMELTER]: "Smelters melt the gold down, ready to be minted.",
+  [ROLES.MINTER]: "Minters strike the molten gold into coin.",
+  [ROLES.PAYER]: "Delivery runs the conveyor belt that carries coin from the reserve up to the Deity — no monkey is fit to hand it over in person.",
 };
 
 /**
@@ -75,6 +77,17 @@ export function StageStrip() {
 
 function StageCard({ stage, blocked, jammed, hint }) {
   const fill = stage.capacity ? Math.min(1, stage.buffer / stage.capacity) : 1;
+  // A buffer nearing full is backpressure arriving from downstream —
+  // often before the stage that's actually stuck shows anything at
+  // all. The source stage (no capacity, unlimited input) never reads
+  // this way; there's no buffer there to back up.
+  const congestion = !stage.capacity
+    ? "normal"
+    : fill >= 0.97
+    ? "critical"
+    : fill >= 0.8
+    ? "warn"
+    : "normal";
   const className = [
     "stagecard",
     blocked ? "stagecard--dead" : jammed ? "stagecard--jam" : "",
@@ -86,11 +99,13 @@ function StageCard({ stage, blocked, jammed, hint }) {
     <div
       className={className}
       title={
+        `${STAGE_DESCRIPTION[stage.role]}\n\n` +
         `${STAGE_LABEL[stage.role]}: ${stage.workers} of ${stage.total} able\n` +
         (stage.capacity
           ? `buffer ${stage.buffer.toFixed(1)} / ${stage.capacity}`
           : "source stage — unlimited input") +
-        `\nrunning at ${Math.round(stage.load * 100)}% of capacity`
+        `\noutput: ${Math.round(stage.load * 100)}% of what its current crew could produce` +
+        " if nothing were blocking them (a full downstream buffer, an empty upstream one)"
       }
     >
       {hint && (
@@ -110,14 +125,23 @@ function StageCard({ stage, blocked, jammed, hint }) {
         </div>
         <div className="stagecard__stat">
           <span>
-            {stage.workers} hand{stage.workers === 1 ? "" : "s"}
+            {stage.workers} worker{stage.workers === 1 ? "" : "s"}
           </span>
-          <span>{Math.round(stage.load * 100)}%</span>
+          <span title="Share of what this stage's current crew could produce if nothing downstream or upstream were holding them back">
+            {Math.round(stage.load * 100)}% output
+          </span>
         </div>
         <div className="stagecard__rate">
-          {blocked ? "STOPPED" : `${stage.rate.toFixed(3)}/s`}
+          {blocked ? "STOPPED" : `${stage.rate.toFixed(3)} coins/s`}
         </div>
-        <div className="stagecard__buffer">
+        <div
+          className={`stagecard__buffer stagecard__buffer--${congestion}`}
+          title={
+            congestion === "normal"
+              ? undefined
+              : "Buffer backing up — whatever's downstream isn't draining it fast enough. Left unchecked this backs up the whole chain behind it, stage by stage."
+          }
+        >
           <i style={{ width: `${fill * 100}%` }} />
         </div>
       </div>

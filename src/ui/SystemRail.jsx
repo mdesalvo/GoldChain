@@ -109,6 +109,7 @@ export function SystemRail() {
       <SystemCard
         icon="union"
         name="Union"
+        description="Unionizers: retrained chain workers who represent the workforce. Keep wellbeing up and they keep the chain calm; starve it too long and grievance boils over into a strike — the one thing on this rail that can stop the flow outright."
         accent="var(--union)"
         plate="union"
         event={strike}
@@ -125,6 +126,7 @@ export function SystemRail() {
       <SystemCard
         icon="politicians"
         name="Politicians"
+        description="Politicians legislate at runtime — a tribute tax, a production quota, safety regulations, a union crackdown. Every law is a real trade-off folded into the whole chain's numbers, never a straight upgrade."
         accent="var(--politics)"
         plate="politicians"
         event={law}
@@ -141,6 +143,7 @@ export function SystemRail() {
       <SystemCard
         icon="medical"
         name="Medical corps"
+        description="Doctors and nurses treat injuries from mine collapses and furnace accidents. Treatment capacity is shared across everyone waiting, so an understaffed ward doesn't just heal slower — it lets a backlog quietly strip workers off the chain."
         accent="var(--medical)"
         plate="hospital"
         detail={
@@ -163,6 +166,7 @@ export function SystemRail() {
       <SystemCard
         icon="police"
         name="Police"
+        description="Police are the security layer against the Mafiosi. Weak policing lets corruption settle in, and corruption is what lets the mafia siphon gold out of mid-chain buffers unpunished."
         accent="var(--security)"
         plate="police"
         event={raid}
@@ -179,6 +183,7 @@ export function SystemRail() {
       <SystemCard
         icon="mafiosi"
         name="Mafiosi"
+        description="Mafiosi siphon gold out of mid-chain buffers when policing is thin and corruption is high. The one institution on this rail nobody funds on purpose — there's no bribe or join action, only Police to counter them."
         accent="var(--mafia)"
         plate="mafia"
         event={raid}
@@ -199,6 +204,7 @@ export function SystemRail() {
 function SystemCard({
   icon,
   name,
+  description,
   accent,
   plate,
   plateDir = "sys",
@@ -215,6 +221,7 @@ function SystemCard({
     <div
       className={`panel sys${hot ? " sys--hot" : ""}`}
       style={{ "--accent": accent }}
+      title={description}
     >
       {plate && (
         <>

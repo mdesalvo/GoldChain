@@ -159,8 +159,13 @@ button {
               border-radius: var(--r);
             }
 .at--alert  { left: 1066px; top: 60px;  width: 332px; height: 192px; }
-.at--strip  { left: 270px;  top: 526px; width: 788px; height: 186px; }
-.at--purse  { left: 1066px; top: 526px; width: 332px; height: 186px; }
+/* The reserve card had far more width than its content (a label, one
+   number, a cover readout, one button) ever used — the stage strip
+   needed it more. Combined width unchanged (860+8+260 = the same
+   1128px footprint the old 788+8+332 split covered), just reallocated
+   toward the five cards that were visibly cramped. */
+.at--strip  { left: 270px;  top: 526px; width: 860px; height: 186px; }
+.at--purse  { left: 1138px; top: 526px; width: 260px; height: 186px; }
 /* Right edge matches the reserve card's (1066+332), not the nominal
    1376px design width — .at--purse already runs 22px past it, and a
    ticker that stopped short of it would visibly not reach the edge
@@ -272,6 +277,21 @@ button {
   font-size: 12px;
   letter-spacing: 1.2px;
   color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* The same politics-coloured dot convention as the stage cards' cause
+   hints — here flagging that a law, not the standing quota, is why
+   the target moved off 1.0. */
+.flow__lawhint {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--politics);
+  box-shadow: 0 0 5px 1px var(--politics);
+  flex: 0 0 auto;
 }
 
 .flow__target {
@@ -842,6 +862,17 @@ button {
   display: block;
   height: 100%;
   background: var(--gold);
+  transition: background-color 200ms ease;
+}
+
+/* Early warning that backpressure is arriving from downstream — often
+   the first sign of trouble, before the stage that's actually stuck
+   shows anything at all. */
+.stagecard__buffer--warn i { background: var(--warn); }
+
+.stagecard__buffer--critical i {
+  background: var(--bad);
+  box-shadow: 0 0 5px 1px var(--bad);
 }
 
 /* The reserve: a label, one number, its cover, and the emergency-pay
@@ -921,6 +952,20 @@ button {
   box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 224, 150, 0.08);
 }
 
+/* Flow is technically still met — the reserve is covering for Delivery
+   — but the belt itself is jammed and the chain is backing up behind
+   it. Between calm and the full red crisis: the tribute hasn't
+   slipped yet, but it will once the reserve runs out of what to pay
+   from. */
+.alert--warn {
+  border-color: var(--warn);
+  background: linear-gradient(
+    180deg,
+    rgba(150, 110, 30, 0.45),
+    rgba(20, 16, 12, 0.95)
+  );
+}
+
 .alert__head {
   display: flex;
   align-items: center;
@@ -933,6 +978,7 @@ button {
 }
 
 .alert--calm .alert__head { color: var(--good); }
+.alert--warn .alert__head { color: var(--warn); }
 
 .alert__body {
   font-size: 13px;

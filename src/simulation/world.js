@@ -46,6 +46,21 @@ export const PIPELINE_ORDER = [
   ROLES.PAYER,
 ];
 
+// The concept names its bottom row by the place (MINES, SMELTERS,
+// TRANSPORT, MINTS, DELIVERY), not by the worker's job title — and
+// nothing in the game ever calls the payer anything but "Delivery",
+// so any player-facing text mentioning a pipeline role (a stage card,
+// a strike notification, an alert) must go through this rather than
+// the raw ROLES.* slug. Canonical here, not in ui/, so simulation and
+// events code can use it too without reaching into the UI layer.
+export const STAGE_LABEL = Object.freeze({
+  [ROLES.MINER]: "Mines",
+  [ROLES.TRANSPORTER]: "Transport",
+  [ROLES.SMELTER]: "Smelters",
+  [ROLES.MINTER]: "Mints",
+  [ROLES.PAYER]: "Delivery",
+});
+
 export const STATES = Object.freeze({
   IDLE: "idle",
   WORKING: "working",
