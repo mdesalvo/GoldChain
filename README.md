@@ -2,6 +2,8 @@
 
 # 🪙 Gold Chain - Satirical capitalist simulator
 
+### [▶ Play it on itch.io!](https://mdesalvo.itch.io/goldchain)
+
 Welcome to a society built for one single purpose. **Deliver exactly one coin every second to your Deity.**
 
 The Deity is an astronomically-paid, deified mega-celebrity. Your sole job is to keep that counter steady.
