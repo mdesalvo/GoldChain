@@ -15,6 +15,9 @@ The Deity is an astronomically-paid, deified mega-celebrity. Your sole job is to
 ## ⚠️ THE GOLDEN RULE
 > **Never let the flow stop, or face divine wrath.**"
 
+The Deity never pays for its own anger. When wrath lands, it's the society that
+absorbs it — wellbeing and stability take the hit, not the throne. That's the joke.
+
 # Production chain
 
 ```

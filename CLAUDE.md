@@ -5,7 +5,7 @@ repository. Read it before making changes.
 
 ## What this project is
 
-**GoldChain** is a satirical 3D tycoon/idle game. A society of
+**GoldChain** is a satirical tycoon/idle game. A society of
 monkeys exists for a single purpose: deliver exactly **1 coin per
 second** to a deified, astronomically-paid celebrity (the "Deity").
 The player's job is to keep that number steady against strikes,
@@ -59,8 +59,7 @@ strict upgrade tree.
 
 ```
 UI Layer        React + CSS            panels over a full-window painted set
-Render Layer    concept art            painted backdrop, state pinned on it
-                React Three Fiber      live 3D view, behind a toggle
+Backdrop        concept art            painted still, state badges pinned on it
 Simulation      Miniplex (ECS)         fixed-tick (15Hz) pipeline + monkey FSM
 Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
 ```
@@ -68,14 +67,18 @@ Events Engine   XState (v5)            strikes, breakdowns, mafia raids, laws
 The screen is the concept art, full window, with every panel laid over
 it in the place the concept put it. Nothing animates: what changes is
 data being written into a panel, plus one state change (the set drains of
-colour when the tribute fails).
+colour when the tribute fails) — see the note on the news ticker below
+for the one deliberate exception.
+
+There used to be a fourth layer here: a React Three Fiber 3D view of
+the same simulation (instanced capsule meshes, colour-coded by role),
+reachable behind a toggle. It was cut (commit `1bf42e6`) because the
+toggle exposed placeholder capsule rendering rather than replacing
+anything — `src/render/` no longer exists. If a real 3D view is ever
+built, it is a fresh effort, not a resumption of that one.
 
 ### Why these choices
 
-- **React Three Fiber**, not raw Three.js or Babylon: the game has
-  as much UI/HUD surface (coin counters, event notifications, deity
-  mood, systemic dashboards) as 3D scene, and R3F lets both live in
-  the same component tree with shared state.
 - **Miniplex (ECS)**, not a class hierarchy per role: hundreds of
   monkey agents need to be queried and updated in bulk every tick
   (`world.with("role").where(...)`). ECS keeps that cheap and keeps
@@ -85,8 +88,11 @@ colour when the tribute fails).
   accumulator pattern so the economy simulation is deterministic
   regardless of device performance or tab throttling. **Never** put
   simulation logic (pipeline throughput, state transitions, coin
-  delivery) inside a `useFrame` render callback — that ties economy
-  balance to framerate, which is a bug, not a feature.
+  delivery) inside a `requestAnimationFrame` callback — that ties
+  economy balance to framerate, which is a bug, not a feature. (A
+  small rAF loop is fine for something purely cosmetic with no
+  gameplay weight — see `NewsTicker.jsx` — as long as it never reads
+  or writes simulation state.)
 - **Zustand**, not Redux: the global state surface (coin rate, deity
   mood, systemic health scores) is small and flat; Zustand avoids
   boilerplate for what is fundamentally a handful of numbers read by
@@ -100,17 +106,22 @@ colour when the tribute fails).
 
 | File | Responsibility |
 |---|---|
-| `src/state/useGameStore.js` | Global game state: coins delivered, current/target rate, deity mood, worker wellbeing, corruption, political stability |
-| `src/simulation/world.js` | ECS world, role definitions, entity spawning, reusable queries |
+| `src/state/useGameStore.js` | Global game state: coins delivered, current/target rate, deity mood, worker wellbeing, corruption, political stability, notifications and the persistent news log |
+| `src/simulation/world.js` | ECS world, role definitions, entity spawning, reusable queries, `STAGE_LABEL` (the canonical human-facing name for each pipeline role) |
 | `src/simulation/pipeline.js` | Bucket-chain economy model: per-stage throughput, buffers, corruption drain |
+| `src/simulation/tick.js` | One simulation tick, free of React so `scripts/simulate.mjs` can run it headless; also builds the per-stage `roleHints` (which system is why a stage needs attention) |
 | `src/simulation/useGameLoop.js` | Fixed-tick driver (15Hz) that steps the simulation and feeds results into the store |
 | `src/simulation/playerActions.js` | Everything the player can do, priced against the reserve |
+| `src/events/eventsEngine.js` | Owns one XState actor per disruption type; the only thing that turns machine state into pipeline modifiers, notifications and one-shot health deltas |
 | `src/ui/theme.css` | Design tokens and every UI style. No inline styles |
-| `src/ui/Viewport.jsx` | Centre pane: painted backdrop, hotspots, stage cards, 3D toggle |
+| `src/App.jsx` | Composes every panel onto the fixed 1376x768 design space, in the concept-pixel position the concept's own UI occupied |
+| `src/ui/Set.jsx` | The concept backdrop, drawn untouched, plus the state badges pinned on it |
+| `src/ui/BrandPanel.jsx` | Title plate and the current-flow / flow-target readout |
 | `src/ui/SystemRail.jsx` | Left rail: one card per societal system, with its actions |
-| `src/ui/AlertRail.jsx` | Right rail: flow alert, deity mood/wrath, reserve, event feed |
-| `src/render/Scene.jsx` | R3F canvas, lighting, camera, ground plane |
-| `src/render/components/MonkeyPopulation.jsx` | Instanced-mesh rendering of all monkey entities, color-coded by role |
+| `src/ui/StageStrip.jsx` | The five pipeline stage cards plus the reserve card |
+| `src/ui/AlertBox.jsx` | Flow alert and the Deity's mood/wrath readout |
+| `src/ui/NewsTicker.jsx` | Bottom news crawl over the last few headlines |
+| `src/ui/parts.jsx` | Shared small components: `Meter`, `ActionButton`, `Popup`, `Icon` |
 
 ## Conventions
 
@@ -126,28 +137,35 @@ colour when the tribute fails).
   `pipeline.js`). They exist to make the loop testable end-to-end,
   not as final game balance — expect them to change significantly
   once the events engine and real playtesting arrive.
-- **DOM UI lives in `src/ui/`, R3F lives in `src/render/`.** The two
-  never import from each other. Both read the store and the ECS; neither
-  writes simulation state.
+- **`src/ui/` reads the store and the ECS; it never writes simulation
+  state.** All state changes go through `useGameStore` actions or the
+  ECS/`playerActions.js`, never a direct mutation from a component.
 - **UI styling goes in `src/ui/theme.css`, via tokens.** Inline styles
   are what made the first HUD look like a debug overlay: no shared type
   scale, no consistent spacing, no hierarchy.
-- **Rendering is disposable, simulation is not.** The current
-  capsule-mesh monkeys are explicitly placeholder art. Do not couple
-  simulation logic to render implementation details (e.g. don't put
-  gameplay state on Three.js objects) so the render layer can be
-  fully replaced without touching `src/simulation/`.
+- **Player-facing role names go through `STAGE_LABEL`** (`world.js`),
+  never the raw `ROLES.*` slug. Four of the five read fine as raw
+  words in a sentence ("a miner", "the smelter line"); the payer
+  doesn't — nothing else in the game ever calls that stage anything
+  but "Delivery", so a raw `"payer"` leaking into a notification reads
+  as a role that got cut, not the one it actually is.
 
 ## What's implemented vs. planned
 
 Implemented:
-- Project structure (render / simulation / state layers)
+- Project structure (ui / simulation / events / state layers — no
+  separate render layer; see the Architecture note above)
 - ECS world with all pipeline + societal roles
 - Fixed-tick simulation loop; tick body lives in
   `src/simulation/tick.js`, free of React, so it can run headless
 - Bucket-chain economy with finite per-stage buffers (backpressure)
   and a **reserve** the Deity is paid out of at exactly the demanded
-  rate — surplus banks up, a stoppage is survivable while it lasts
+  rate — surplus banks up, a stoppage is survivable while it lasts.
+  Backpressure genuinely cascades: block any one stage long enough and
+  every buffer behind it fills in turn, stage by stage, until nothing
+  in the whole chain is moving — Delivery is the one stage where this
+  matters most, since it's the only stage with nothing after it but
+  the reserve itself.
 - **Events engine** — one XState machine per disruption type
   (strike, breakdown, mafia raid, legislation), stepped by explicit
   `TICK` events
@@ -156,9 +174,18 @@ Implemented:
 - Societal drift: each health score seeks an equilibrium set by
   headcount in the non-productive roles
 - Deity mood, wrath, and a quota ratchet
-- Instanced 3D rendering, colour/pose reflecting monkey state
 - HUD: tribute, reserve, systemic meters, per-stage chain readout,
-  live systems panel, notification feed
+  live systems panel, notification popups per system card, plus a
+  persistent bottom news ticker (`NewsTicker.jsx`) that never expires
+  the way the per-card popups do
+- Per-stage cause hints: a small colour dot on a stage card naming
+  *which* system is behind its current state (union, breakdown, mafia,
+  medical) — separate from the jam/blocked border, which only says
+  *that* something is wrong
+- Contextual tooltips on every role, institution, and HUD readout
+  (stage cards, `SystemRail` cards, Deity mood, current/target flow)
+  explaining the mechanic in one hover, in place of leaving the player
+  to infer it from a bare number
 - Headless balance harness: `npm run sim -- <minutes> [seed]`
 
 - Player actions (`src/simulation/playerActions.js`): negotiate, lobby
@@ -181,60 +208,64 @@ Planned, not yet built:
 - **Concurrent laws**: the legislation machine holds one law at a
   time; the mockup shows a stack of active laws with numeric
   parameters (tax %, minimum wage), which means one actor per law.
-- Real monkey models/animations for the 3D view (currently colored
-  capsules, reachable via the viewport's 3D toggle)
+- A live 3D/animated view of the simulation. One existed (React Three
+  Fiber, instanced capsule meshes) and was removed — see the
+  Architecture note above — so this would be new work, not a
+  continuation, and should not assume anything about the old
+  `src/render/` layout.
 - Pathfinding/movement between pipeline stages
 - Deity reaction system (visual/audio feedback tied to mood)
 - Save/load, difficulty tuning, win/loss conditions
 
 ## Art
 
-`public/art/` and `src/ui/artRegions.js` are generated — never edit either
-by hand. Run:
+`public/art/` and `src/ui/artRegions.js` are now **hand-maintained**.
+They used to be generated by `scripts/extract-art.py` (crop boxes and
+hotspot anchors picked by eye against `art-source/GoldChain.jpg`), but
+that script has been removed — there is currently no tooling that
+regenerates these from the source art. If a crop or a hotspot anchor
+needs to change, edit the files under `public/art/` and the anchors in
+`src/ui/artRegions.js` directly, in concept pixels, keeping the two in
+sync by hand (a crop change not mirrored in `artRegions.js` puts a
+badge somewhere other than where it belongs). `DESIGN` in that file
+must keep matching the actual backdrop image's pixel dimensions.
 
-```
-python3 scripts/extract-art.py
-```
+`art-source/` (the concept still, and a 5.9s animated version of the
+same frame) is reference material only now — nothing reads it at build
+or dev time. It's kept out of `public/`, which is copied verbatim into
+the build and served, deliberately: neither file should ship.
 
-Sources live in `art-source/`: the concept still, and a 5.9s animated
-version of the same frame kept for reference. They are deliberately *not*
-under `public/`, which is copied verbatim into the build and served.
-
-The script is the single source of truth for the crop boxes, all of which
-were picked by eye. It also emits `artRegions.js` — the backdrop's aspect
-ratio and the hotspot anchors as percentages — because the hotspots are
-positioned relative to the backdrop crop, and a crop change that wasn't
-mirrored in the percentages would silently put the strike badge somewhere
-other than the picket line. Anchors are declared in concept pixels; the
-conversion is the script's job, not a human's.
-
-### Painting out the concept's UI
-
-Their panels are opaque, so there is no art under them to recover. Each
-footprint is filled by stretching a thin slice of the adjacent art, then
-blurring and dimming it. Two other fills were tried and both failed
-visibly: flat colour left a dead band wherever our responsive panels
-didn't land exactly on their fixed-layout footprints, and mirroring the
-neighbouring art duplicated the picket signs and the salary placard,
-reversed lettering and all.
-
-Check the backdrop's edges after any change to `CONCEPT_UI`.
+The backdrop actually loaded at runtime is `public/art/backdrop2.jpg`
+(see `Set.jsx`, `theme.css`).
 
 ### The set is the window
 
-The backdrop is the whole concept image, drawn `cover` behind everything,
-with the regions the concept's own UI occupied painted back out. Our
-panels go where theirs were. That is the only layout in which the art gets
-the whole window rather than whatever the side rails leave over — a
-cropped plate in a pane lost both the rails' width and every region their
-UI had been sitting on.
+Three earlier layouts tried to make our panels fit around the concept's
+own painted-in UI — cropping the backdrop into a pane, or painting over
+the regions the concept's own UI occupied — and every one of them showed:
+a cropped plate in a pane lost both the side rails' width and every
+region the concept's UI had been sitting on, flat-colour fills left dead
+bands wherever a responsive panel didn't land exactly on the concept's
+fixed-layout footprint, and mirroring the neighbouring art duplicated the
+picket signs and the salary placard, reversed lettering and all.
 
-Because it is drawn `cover`, a percentage of the image is not a percentage
-of the window: `Backdrop.jsx` converts, and re-converts on resize. Badge
-anchors come from `artRegions.js`, which is generated.
+The fix was to stop treating it as an image problem. The screen is now a
+fixed 1376x768 design space (`.design` in `theme.css`), scaled as one
+piece to whatever window it's given — never cropped, never retouched.
+`useDesignScale()` (`src/ui/Screen.jsx`) computes that scale factor as
+`min(window / design)` so the whole picture is always visible, and
+`App.jsx` applies it as the `--design-scale` CSS variable. Every panel
+is positioned with plain concept-pixel coordinates (the `.at--*` classes
+in `theme.css`) in the exact spot the concept's own UI occupied, so ours
+lands on theirs at every window size and the artwork needs no retouching
+at all — leftover space around the fixed box is filled by a blurred
+bleed of the same artwork (`.bleed`), not by cropping.
 
-The R3F scene is still the honest view of the simulation — every capsule
-is a real entity — behind the toggle in the clock bar.
+`Set.jsx` renders the backdrop image plus the state badges pinned on it,
+at plain concept-pixel coordinates too — no percentage conversion needed
+at render time, because everything downstream of `artRegions.js` (itself
+generated, in concept pixels) is already inside the same fixed coordinate
+space that `--design-scale` scales as one piece.
 
 ### Nothing animates
 
@@ -260,8 +291,20 @@ Emphasis on the stills is CSS instead: framing, gradients, glows, hover,
 and state colour. The one thing that changes over time is a *state*
 change, not a loop — the set drains of colour when the tribute fails,
 driven by `flowMet` in the 5Hz snapshot so it costs no extra re-renders.
-If motion is ever revisited, the measurements above are the bar it has to
-clear.
+If motion on the painted set is ever revisited, the measurements above
+are the bar it has to clear.
+
+One genuine exception since: the news ticker (`NewsTicker.jsx`) does
+scroll continuously, along the bottom edge — the one region of the fixed
+design space the concept's own art left empty, below the stage strip and
+reserve card. It's driven by a small `requestAnimationFrame` loop with a
+clamped per-frame delta (the same technique `useGameLoop` uses for the
+sim clock), not a CSS `animation`: a wall-clock CSS animation has no way
+to avoid snapping forward after the tab spends time occluded, and a
+percentage-based or guessed-fixed keyframe target retargets — and
+visibly stutters — every time the headline text underneath it changes
+width. The loop only ever writes a `transform` to one element; nothing
+it does reads or writes simulation state.
 
 ## Working on this repo
 
@@ -271,13 +314,15 @@ clear.
   starting value, which is the one state that tells you nothing about
   whether the UI works.
 - Run `npm run build` before committing any change that touches
-  `src/simulation/` or `src/render/` — it's the fastest way to catch
-  broken imports across the ECS/render boundary.
+  `src/simulation/` or `src/events/` — it's the fastest way to catch
+  broken imports across module boundaries.
 - When adding a new monkey role: add it to `ROLES`, decide whether it
   belongs in `PIPELINE_ORDER` (direct production chain) or is purely
-  systemic (unions/police/politics/medical), add its color to
-  `ROLE_COLORS` in `MonkeyPopulation.jsx`, and add its count to
-  `seedInitialPopulation()` in `world.js`.
+  systemic (unions/police/politics/medical), and add its count to
+  `seedInitialPopulation()` in `world.js`. If it's a pipeline role,
+  also add it to `STAGE_LABEL` (`world.js`) — every place a role name
+  reaches the player goes through that map, not the raw `ROLES.*`
+  slug.
 - When adding a disruption, add a machine under
   `src/events/machines/` exporting four things — the machine, a
   `describe*`, a `*Modifiers` and a `*Transition` — then register it
