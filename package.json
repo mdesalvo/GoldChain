@@ -2,7 +2,9 @@
   "name": "goldchain",
   "version": "0.1.0",
   "private": true,
-  "description": "GoldChain — a satirical 3D idle/tycoon game where a monkey society exists to mint one coin per second for a deified celebrity.",
+  "description": "GoldChain — a satirical idle/tycoon game where a monkey society exists to mint one coin per second for a deified celebrity.",
+  "author": "Marco De Salvo, Glauco Mantegari",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
