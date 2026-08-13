@@ -1,0 +1,37 @@
+name: Publish to itch.io
+
+# Fires when a GitHub Release is published — tag it, and the build that
+# comes out of it is what players get, with zero manual steps. Uses the
+# official `butler` CLI (https://github.com/itchio/butler) directly
+# rather than a third-party marketplace wrapper, so the itch.io API key
+# never passes through anyone's code but itch.io's own.
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Install butler
+        run: |
+          curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -o butler.zip -d butler
+          chmod +x butler/butler
+          butler/butler -V
+
+      - name: Push build to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          butler/butler push dist mdesalvo/goldchain:html5 \
+            --userversion "${{ github.event.release.tag_name }}"
