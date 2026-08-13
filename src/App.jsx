@@ -3,7 +3,6 @@ import { useGameStore } from "./state/useGameStore.js";
 import { Set } from "./ui/Set.jsx";
 import { useDesignScale } from "./ui/Screen.jsx";
 import { BrandPanel, FlowPanel } from "./ui/BrandPanel.jsx";
-import { ControlPanel } from "./ui/ClockBar.jsx";
 import { AlertBox } from "./ui/AlertBox.jsx";
 import { SystemRail } from "./ui/SystemRail.jsx";
 import { StageStrip, ReserveCard } from "./ui/StageStrip.jsx";
@@ -52,9 +51,6 @@ export default function App() {
         <div className="at at--brand"><BrandPanel /></div>
         <div className="at at--flow"><FlowPanel /></div>
         <div className="at at--rail"><SystemRail /></div>
-        <div className="at at--ctrl">
-          <ControlPanel />
-        </div>
         <div className="at at--alert"><AlertBox /></div>
         <div className="at at--strip"><StageStrip /></div>
         <div className="at at--purse"><ReserveCard /></div>

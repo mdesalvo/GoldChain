@@ -158,12 +158,11 @@ button {
               overflow: hidden;
               border-radius: var(--r);
             }
-.at--ctrl   { left: 270px; top: 8px;   width: 56px; height: 56px; }
 .at--alert  { left: 1066px; top: 60px;  width: 332px; height: 192px; }
 .at--strip  { left: 270px;  top: 526px; width: 788px; height: 186px; }
 .at--purse  { left: 1066px; top: 526px; width: 332px; height: 186px; }
 
-.at--brand > *, .at--flow > *, .at--ctrl > *,
+.at--brand > *, .at--flow > *,
 .at--alert, .at--purse > * { height: 100%; }
 
 .at--rail::-webkit-scrollbar { width: 5px; }
@@ -282,46 +281,6 @@ button {
   font-size: 26px;
   line-height: 1;
   color: var(--bad);
-}
-
-/* ------------------------------------------------------------- controls */
-
-.timectl {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 5px 6px;
-}
-
-.tbtn {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  font-size: 13px;
-  color: var(--gold);
-  background: var(--panel-sunken);
-  border: 1px solid var(--edge-soft);
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.tbtn:hover { border-color: var(--edge); }
-
-.tbtn--on {
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-  border-color: var(--gold-bright);
-  color: var(--ink);
-}
-
-/* Drawn rather than cut: the concept's pause glyph is dark-on-gold, so it
-   keys out to nothing against its own button. */
-.tbtn__pause {
-  width: 12px;
-  height: 14px;
-  border-left: 4px solid currentColor;
-  border-right: 4px solid currentColor;
 }
 
 /* ----------------------------------------------------------- system card */

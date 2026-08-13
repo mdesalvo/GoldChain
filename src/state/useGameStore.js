@@ -10,9 +10,7 @@ import { create } from "zustand";
  */
 
 // How long a notification stays up before it expires on its own. Ticked
-// down alongside the simulation (see `decayNotifications`), so it freezes
-// with everything else when the game is paused rather than draining in
-// the background.
+// down alongside the simulation (see `decayNotifications`).
 const NOTIFICATION_TTL = 5;
 let notificationId = 0;
 
@@ -59,7 +57,6 @@ export const useGameStore = create((set) => ({
   treatmentCapacity: 0,
   siphonRate: 0, // units/sec the mafia is currently siphoning
   blockedRoles: [],
-  paused: false,
 
   // --- Actions ---
   deliverCoin: (amount = 1) =>
@@ -153,8 +150,6 @@ export const useGameStore = create((set) => ({
         .map((n) => ({ ...n, ttl: n.ttl - dt }))
         .filter((n) => n.ttl > 0),
     })),
-
-  togglePaused: () => set((s) => ({ paused: !s.paused })),
 }));
 
 function clamp(value, min = 0, max = 100) {

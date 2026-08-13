@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useGameStore } from "../state/useGameStore.js";
 import { stepSimulation, publishSnapshot, TICK_DT } from "./tick.js";
 
 // The HUD's heavier readouts (per-stage buffers, active event list) are
@@ -27,14 +26,6 @@ export function useGameLoop() {
     function loop(now) {
       const frameDt = (now - lastTimeRef.current) / 1000;
       lastTimeRef.current = now;
-
-      if (useGameStore.getState().paused) {
-        // Drop the elapsed time on the floor rather than banking it, so
-        // unpausing doesn't fast-forward through the whole pause.
-        accumulatorRef.current = 0;
-        rafRef.current = requestAnimationFrame(loop);
-        return;
-      }
 
       accumulatorRef.current += Math.min(frameDt, 0.25); // clamp to avoid spiral of death
 
