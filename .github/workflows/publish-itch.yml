@@ -33,5 +33,9 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
+          # package.json is the single source of truth for the version —
+          # not the release tag, so a release can be tagged/named freely
+          # without it silently drifting from what itch.io shows.
+          VERSION=$(node -p "require('./package.json').version")
           butler/butler push dist mdesalvo/goldchain:html5 \
-            --userversion "${{ github.event.release.tag_name }}"
+            --userversion "$VERSION"
