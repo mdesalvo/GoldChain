@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/mdesalvo/GoldChain/master/art-source/GoldChain.jpg" width="100%" />
 
-# 🪙 Gold Chain - Satirical capitalist simulator
+# 🪙 Gold Chain
 
 ### [▶ Play it on itch.io!](https://mdesalvo.itch.io/goldchain)
 
